@@ -70,6 +70,7 @@ library
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.18.3.0,
                       mtl >= 2.3.1,
+                      stm >= 2.5.1.0,
                       transformers >= 0.6.1.0
 
     -- Directories containing source files.
@@ -96,6 +97,7 @@ executable haskell-proxy
                   base ^>=4.18.3.0,
                   haskell-proxy,
                   mtl >= 2.3.1,
+                  stm >= 2.5.1.0,
                   transformers >= 0.6.1.0
 
     -- Directories containing source files.
@@ -131,4 +133,5 @@ test-suite haskell-proxy-test
                   base ^>=4.18.3.0,
                   haskell-proxy,
                   mtl >= 2.3.1,
+                  stm >= 2.5.1.0,
                   transformers >= 0.6.1.0
