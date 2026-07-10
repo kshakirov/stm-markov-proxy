@@ -10,23 +10,22 @@ data Config = Config {
                      backends :: [Int]
                      }
 
-getHostName ::  Reader  Config  String
-getHostName = do
+  
+type ProxyM a = ReaderT Config IO a
+
+listenAndServe ::  ProxyM ()
+listenAndServe = do
+--  let c = Config{hostName="proxyHost", port=8989, backends = [1,2]}
   config <- ask
   let name = hostName config
-  return name
-  
-
-listenAndServe :: String -> IO ()
-listenAndServe prompt = do
-  putStrLn prompt
+--  liftIO $  putStrLn $ hostName c
+  liftIO $ putStrLn $  "The host is " ++  name 
+--  putStrLn ""
 
 
 main :: IO ()
 main = do
   putStrLn "Hello, Haskell!"
   let c = Config{hostName="localhost", port=8989, backends = [1,2]}
-  putStrLn $ hostName c
-  putStrLn $ runReader (getHostName)  c
-  listenAndServe "Kirill "
-  MyLib.someFunc
+  runReaderT listenAndServe c 
+
