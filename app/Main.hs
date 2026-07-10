@@ -1,31 +1,39 @@
 module Main where
 
-import qualified MyLib (someFunc)
 import Control.Monad.Reader
-import qualified  Control.Monad.Trans.Reader as RT
+import qualified Control.Monad.Trans.Reader as RT
+import qualified MyLib (someFunc)
 
-data Config = Config {
-                     hostName :: String,
-                     port:: Int,
-                     backends :: [Int]
-                     }
+data Env = Env
+  { proxyConfig :: Config,
+    backendConfigs :: [BackendConfig]
+  }
 
-  
-type ProxyM a = ReaderT Config IO a
+data BackendConfig = BackendConfig
+  { appName :: String,
+    runningPort :: Int
+  }
 
-listenAndServe ::  ProxyM ()
+data Config = Config
+  { hostName :: String,
+    port :: Int
+  }
+
+type ProxyM a = ReaderT Env IO a
+
+listenAndServe :: ProxyM ()
 listenAndServe = do
---  let c = Config{hostName="proxyHost", port=8989, backends = [1,2]}
-  config <- ask
-  let name = hostName config
---  liftIO $  putStrLn $ hostName c
-  liftIO $ putStrLn $  "The host is " ++  name 
---  putStrLn ""
+  --  let c = Config{hostName="proxyHost", port=8989, backends = [1,2]}
+  env <- ask
+  let name = (hostName . proxyConfig) env
+  --  liftIO $  putStrLn $ hostName c
+  liftIO $ putStrLn $ "The host is " ++ name
 
+--  putStrLn ""
 
 main :: IO ()
 main = do
   putStrLn "Hello, Haskell!"
-  let c = Config{hostName="localhost", port=8989, backends = [1,2]}
-  runReaderT listenAndServe c 
-
+  let c = Config {hostName = "localhost", port = 8989}
+  let e = Env {proxyConfig = c, backendConfigs = []}
+  runReaderT listenAndServe e
