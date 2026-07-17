@@ -70,6 +70,8 @@ library
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.18.3.0,
                       mtl >= 2.3.1,
+                      network >= 3.2.7.0,
+                      network >= 3.2.7.0,
                       stm >= 2.5.1.0,
                       transformers >= 0.6.1.0
 
@@ -97,6 +99,8 @@ executable haskell-proxy
                   base ^>=4.18.3.0,
                   haskell-proxy,
                   mtl >= 2.3.1,
+                  network >= 3.2.7.0,
+                  network >= 3.2.7.0,
                   stm >= 2.5.1.0,
                   transformers >= 0.6.1.0
 
@@ -133,5 +137,7 @@ test-suite haskell-proxy-test
                   base ^>=4.18.3.0,
                   haskell-proxy,
                   mtl >= 2.3.1,
+                  network >= 3.2.7.0,
+                  network >= 3.2.7.0,
                   stm >= 2.5.1.0,
                   transformers >= 0.6.1.0
