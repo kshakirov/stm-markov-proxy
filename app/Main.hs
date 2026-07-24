@@ -1,4 +1,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 
 module Main where
 
@@ -11,7 +13,7 @@ import qualified Network.Socket as S
 import qualified MyLib (someFunc)
 import Control.Monad (forever)
 import Control.Concurrent (forkIO)
-import Network.Socket.ByteString (recv)
+import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
 
 
@@ -41,6 +43,7 @@ type ProxyM a = ReaderT Env IO a
 listenAndServe :: ProxyM ()
 listenAndServe = do
   --  let c = Config{hostName="proxyHost", port=8989, backends = [1,2]}
+
   env <- ask
   let name = (hostName . proxyConfig) env
   let ends =( backends  . proxyConfig)env
@@ -108,5 +111,8 @@ openListeningSocket portNum = do
 handleClient:: Socket -> ProxyM ()
 
 handleClient s = do
-  request <- liftIO $ recv s 1024 
+  let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
+  request <- liftIO $ recv s 1024
+  liftIO $ sendAll s resp
+  liftIO $ S.close s 
   return ()
