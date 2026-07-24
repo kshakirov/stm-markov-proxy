@@ -9,6 +9,11 @@ import Network.Socket (Socket)
 import qualified Network.Socket as S
 
 import qualified MyLib (someFunc)
+import Control.Monad (forever)
+import Control.Concurrent (forkIO)
+import Network.Socket.ByteString (recv)
+import qualified Data.ByteString as B
+
 
 data Env = Env
   { proxyConfig :: Config,
@@ -44,6 +49,15 @@ listenAndServe = do
   liftIO $ putStrLn  (show sb)
   --  liftIO $  putStrLn $ hostName c
   liftIO $ putStrLn $ "The host is " ++ name
+  socket <-  liftIO  $ openListeningSocket 9000
+  forever $ do 
+    (conn, addr) <- liftIO $ S.accept socket
+    liftIO $ forkIO (runReaderT (handleClient conn) env)
+    liftIO $ print 1 
+    -- здесь будет наш форк ищ 
+--    forkIO $ handleClient conn 
+  liftIO $ print socket 
+  
 
 --  putStrLn ""
 
@@ -55,6 +69,7 @@ main = do
   let c = Config {hostName = "localhost", port = 8989, backends=3}
 
   let e = Env {proxyConfig = c, backendConfigs = [], proxyTVarState = refProxyTVarState}
+  
   runReaderT listenAndServe e
 
 
@@ -83,9 +98,15 @@ nextBackendIdxTx stateRef totalBackends = do
 openListeningSocket :: Int -> IO Socket
 openListeningSocket portNum = do
   let hints = S.defaultHints { S.addrFlags = [S.AI_PASSIVE], S.addrSocketType = S.Stream }
-  addrInfo <- head <$> S.getAddrInfo (Just hints) Nothing (Just (show portNum))
+  addrInfo <- head <$> S.getAddrInfo (Just hints) (Just "127.0.0.1") (Just (show portNum))
   sock <- S.socket (S.AF_INET) (S.addrSocketType addrInfo) (S.addrProtocol addrInfo)
   S.setSocketOption sock S.ReuseAddr 1
   S.bind sock (S.addrAddress addrInfo)
   S.listen sock 1024
   return sock
+
+handleClient:: Socket -> ProxyM ()
+
+handleClient s = do
+  request <- liftIO $ recv s 1024 
+  return ()
