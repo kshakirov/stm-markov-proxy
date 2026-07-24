@@ -38,6 +38,23 @@ data ProxyState = ProxyState
   { nextBackendIndex :: Int
   }
 
+
+-- 1. Тип правила: обычное (Normal) или финальное (Terminal)
+data RuleType = Normal | Terminal 
+  deriving (Show, Eq)
+
+-- 2. Структура одного Марковского правила перезаписи строк
+data MarkovRule = MarkovRule
+  { pattern     :: B.ByteString
+  , replacement :: B.ByteString
+  , ruleType    :: RuleType
+  } deriving (Show, Eq)
+
+-- 3. Система НАМ — это упорядоченный список правил
+type MarkovSystem = [MarkovRule]
+
+
+
 type ProxyM a = ReaderT Env IO a
 
 listenAndServe :: ProxyM ()
