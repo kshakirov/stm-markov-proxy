@@ -48,9 +48,6 @@ listenAndServe = do
   let name = (hostName . proxyConfig) env
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
-  sb <- liftIO $ atomically $ nextBackendIdxTx tVarState ends
-  liftIO $ putStrLn  (show sb)
-  --  liftIO $  putStrLn $ hostName c
   liftIO $ putStrLn $ "The host is " ++ name
   socket <-  liftIO  $ openListeningSocket 9000
   forever $ do 
@@ -111,6 +108,12 @@ openListeningSocket portNum = do
 handleClient:: Socket -> ProxyM ()
 
 handleClient s = do
+  env <- ask
+  let name = (hostName . proxyConfig) env
+  let ends =( backends  . proxyConfig)env
+  let tVarState = proxyTVarState env
+  sb <- liftIO $ atomically $ nextBackendIdxTx tVarState ends
+  liftIO $ putStrLn  (show sb)
   let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
   request <- liftIO $ recv s 1024
   liftIO $ sendAll s resp
