@@ -6,6 +6,7 @@ module Main where
 
 import Control.Concurrent.STM (TVar, newTVarIO, readTVar, writeTVar, STM,atomically)
 import Control.Monad.Reader
+    ( ReaderT(runReaderT), MonadReader(ask), MonadIO(liftIO) )
 import qualified Control.Monad.Trans.Reader as RT
 import Network.Socket (Socket)
 import qualified Network.Socket as S
@@ -15,7 +16,7 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-
+import MyLib (someFunc)
 
 data Env = Env
   { proxyConfig :: Config,
