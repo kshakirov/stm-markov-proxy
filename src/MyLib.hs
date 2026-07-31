@@ -1,19 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 module MyLib (someFunc) where
-import Data.ByteString (ByteString, uncons, breakSubstring)
+import qualified  Data.ByteString as B -- (ByteString, uncons, breakSubstring, concat, dro
+import qualified Data.ByteString as B
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
 
-runMarkovStep :: ByteString -> ByteString
-runMarkovStep s =
-  let (before, after) = breakSubstring  "fd" s 
-      result = after
-  in result 
+runMarkovStep :: B.ByteString -> B.ByteString ->B.ByteString  -> B.ByteString
+runMarkovStep s t r  =
+  let (before, after) = B.breakSubstring  t s
+      tail = B.drop 2 after
+  in B.concat [before, r, tail]
 
 
 
-runMarkov :: ByteString -> ByteString
-runMarkov  s =  case uncons s of
+runMarkov :: B.ByteString -> B.ByteString
+runMarkov  s =  case B.uncons s of
   Nothing -> ""
-  Just (x,xs) -> runMarkovStep xs
+  Just (x,xs) -> xs
