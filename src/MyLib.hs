@@ -17,10 +17,10 @@ runMarkovStep s t r  =
 
 runMarkov :: [(B.ByteString, B.ByteString)] -> B.ByteString ->B.ByteString
 runMarkov  [] s = s
-runMarkov (r:rules)   s =
+runMarkov allRules@(r:rules)   s =
   let transformed = runMarkovStep s (fst r) (snd r)
   in case transformed of
-        (ts, True) -> runMarkov (r:rules) ts
+        (ts, True) -> runMarkov allRules ts
         (ts, False) -> runMarkov rules s
  
        
