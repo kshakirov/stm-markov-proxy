@@ -17,11 +17,10 @@ runMarkovStep s t r  =
 
 
 runMarkov :: [(B.ByteString, B.ByteString)] -> B.ByteString ->B.ByteString
-runMarkov  [] s = s
 runMarkov allRules   s = go allRules s where
-  go [] s = s
-  go (r:rs ) s = 
-    let transformed = runMarkovStep s (fst r) (snd r)
+  go [] ss = ss
+  go (r:rs ) ss = 
+    let transformed = runMarkovStep ss (fst r) (snd r)
     in case transformed of
          (ts, True) -> runMarkov allRules ts
          (ts, False) -> go rs ts
