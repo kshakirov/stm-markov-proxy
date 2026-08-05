@@ -20,7 +20,7 @@ runMarkov :: [(B.ByteString, B.ByteString)] -> B.ByteString ->B.ByteString
 runMarkov allRules   s = go allRules s where
   go [] ss = ss
   go (r:rs ) ss = 
-    let transformed = runMarkovStep ss (fst r) (snd r)
+    let transformed = uncurry (runMarkovStep ss) r
     in case transformed of
          (ts, True) -> runMarkov allRules ts
          (ts, False) -> go rs ts
