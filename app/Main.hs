@@ -11,12 +11,12 @@ import qualified Control.Monad.Trans.Reader as RT
 import Network.Socket (Socket)
 import qualified Network.Socket as S
 
-import qualified MyLib (someFunc)
+
 import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import MyLib (someFunc)
+import MyLib (runMarkov)
 
 data Env = Env
   { proxyConfig :: Config,
@@ -134,6 +134,8 @@ handleClient s = do
   liftIO $ putStrLn  (show sb)
   let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
   request <- liftIO $ recv s 1024
+  let replaced = runMarkov [("GET", "POST")] request
+  liftIO $putStrLn (show replaced)
   liftIO $ sendAll s resp
   liftIO $ S.close s 
   return ()

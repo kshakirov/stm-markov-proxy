@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module MyLib (someFunc) where
+module MyLib (runMarkov) where
 import qualified  Data.ByteString as B -- (ByteString, uncons, breakSubstring, concat, dro
 
 
