@@ -2,7 +2,21 @@
 
 module MyLib (runMarkov) where
 import qualified  Data.ByteString as B -- (ByteString, uncons, breakSubstring, concat, dro
+import Data.Word
 
+
+
+data ParserStatus =
+  Method
+  |URI
+  |Version
+  |Finish
+
+data ParserState = ParserState{
+  currentState :: ParserStatus,
+  currentIndex :: Int ,
+  parsed :: [Int]
+                   }
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
@@ -24,8 +38,11 @@ runMarkov allRules   s = go allRules s where
     in case transformed of
          (ts, True) -> runMarkov allRules ts
          (ts, False) -> go rs ts
- 
+
+
+runWirth :: ParserState -> Word8 -> B.ByteString -> ParserState
+runWirth state w8 s = state
   
-  
+
   
 
