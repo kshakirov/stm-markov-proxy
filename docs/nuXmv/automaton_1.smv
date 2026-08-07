@@ -1,0 +1,34 @@
+MODULE main
+
+  VAR
+    state : {reqMethod, reqUri, reqVersion,expectCRLF, success, error};
+
+IVAR
+
+  action : {none, space, carriage, newLine, byteSeq};
+
+ASSIGN
+  init(state):=reqMethod;
+next(state):=case 
+	       state= reqMethod & action=space: reqUri;
+	       state= reqUri  & action=space: reqVersion;
+	       state= reqVersion & action=carriage: expectCRLF;
+	       state = expectCRLF & action=newLine: success;
+	       state = expectCRLF & action=byteSeq: error;
+	       
+	       
+	       
+	       TRUE : state;
+	       
+	       esac;
+	       
+
+	       
+	       
+	       
+	       
+
+	       
+
+  
+  LTLSPEC G (state = reqMethod  -> F (state = success))
