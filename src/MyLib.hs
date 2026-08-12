@@ -10,7 +10,8 @@ data ParserStatus =
   Method
   |URI
   |Version
-  |Finish
+  |Error
+  |Finish deriving (Show, Eq)
 
 data ParserState = ParserState{
   currentState :: ParserStatus,
@@ -43,11 +44,17 @@ runMarkov allRules   s = go allRules s where
 
 
 runWirth :: ParserState -> Word8 -> B.ByteString -> ParserState
-runWirth state w8 s =
-  case currentState state of
-    Method | w8 == 0x20 -> runWirth ParserState {currentState = URI, currentIndex =currentIndex state + 1, parsed= currentIndex state  + 1  : parsed state } 1 s
-                | w8 > 8 -> state
-    _ -> state
+
+runWirth state 0x20  s 
+  | currentState state  == Method  && currentIndex state < 8 =
+   runWirth ParserState {currentState = URI, currentIndex =currentIndex state + 1, parsed= currentIndex state  + 1  : parsed state } 1 s
+
+
+runWirth state w8 s
+  | currentState state == Method && currentIndex state > 8 = state {currentState = Error, currentIndex = 9, parsed = 9 : parsed state}
+runWirth state _ _ = state                        
+
+
      
   
 
