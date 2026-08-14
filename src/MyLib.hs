@@ -53,6 +53,24 @@ runWirth s b = case B.uncons b of
 
 runWirthStep :: ParserState -> Word8 -> ParserState
 
+runWirthStep state 0x0D 
+  | currentState state == HeaderValue =
+      state {currentState = ExpectCLRF, currentIndex = currentIndex state + 1, parsed = currentIndex state  : parsed state}
+
+runWirthStep state w8
+  | currentState state == HeaderValue  =
+      state {currentState =HeaderValue, currentIndex = currentIndex state + 1}
+
+
+
+runWirthStep state 0x3A
+  | currentState state == HeaderName =
+      state {currentState = HeaderValue, currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
+
+runWirthStep state w8
+  | currentState state == HeaderName  =
+      state {currentState =HeaderName, currentIndex = currentIndex state + 1}
+
 
 runWirthStep state 0x0A
   | currentState state == ExpectCLRF =
