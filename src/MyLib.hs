@@ -17,7 +17,7 @@ data ParserState = ParserState{
   currentState :: ParserStatus,
   currentIndex :: Int ,
   parsed :: [Int]
-                   }
+                   }deriving(Show, Eq)
 
 someFunc :: IO ()
 someFunc = putStrLn "someFunc"
@@ -43,20 +43,40 @@ runMarkov allRules   s = go allRules s where
 
 
 
-runWirth :: ParserState -> Word8 -> B.ByteString -> ParserState
+runWirthOld :: ParserState -> Word8 -> B.ByteString -> ParserState
 
-runWirth state 0x20  s 
+runWirthOld state 0x20  s 
   | currentState state  == Method  && currentIndex state < 8 =
-   runWirth ParserState {currentState = URI, currentIndex =currentIndex state + 1, parsed= currentIndex state  + 1  : parsed state } 1 s
+   runWirthOld ParserState {currentState = URI, currentIndex =currentIndex state + 1, parsed= currentIndex state  + 1  : parsed state } 1 s
 
 
-runWirth state w8 s
+runWirthOld state w8 s
   | currentState state == Method && currentIndex state > 8 = state {currentState = Error, currentIndex = 9, parsed = 9 : parsed state}
-runWirth state _ _ = state                        
+runWirthOld state _ _ = state                        
 
 
-     
-  
+runWirth :: ParserState -> B.ByteString -> ParserState
+runWirth s b = case B.uncons b of
+  Nothing -> s
+  Just (w8,rest) ->
+    let nextState = runWirthStep s w8 in
+      runWirth nextState rest
+
+
+runWirthStep :: ParserState -> Word8 -> ParserState
+runWirthStep state 0x20
+  | currentState state  == Method  && currentIndex state < 8 =
+   ParserState {currentState = URI, currentIndex =currentIndex state + 1, parsed= currentIndex state  + 1  : parsed state }
+
+runWirthStep state w8 
+  | currentState state  == Method  && currentIndex state > 8 =
+      state{currentState = Error, currentIndex = currentIndex state, parsed = parsed state}
+
+runWirthStep state w8 
+  | currentState state  == Method  && currentIndex state < 8 =
+      state{currentState = Method, currentIndex = currentIndex state + 1, parsed = currentIndex state : parsed state}
+
+runWirthStep s _ = s 
 
   
 
