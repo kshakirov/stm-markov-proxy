@@ -10,10 +10,12 @@ data ParserStatus
   | URI
   | Version
   | Error
+  |Success
   | Finish
   |ExpectCLRF
   |HeaderName
   |HeaderValue
+  |ExpectFinalCLRF
   deriving (Show, Eq)
 
 data ParserState = ParserState
@@ -43,15 +45,27 @@ runMarkov allRules s = go allRules s
             (ts, False) -> go rs ts
 
 runWirth :: ParserState -> B.ByteString -> ParserState
-runWirth s _ = case currentState s of
+runWirth s b = case currentState s of
+  Success -> s
   Error -> s
-runWirth s b = case B.uncons b of
-  Nothing -> s
-  Just (w8, rest) ->
-    let nextState = runWirthStep s w8
-     in runWirth nextState rest
+  _  ->  case B.uncons b of
+    Nothing -> s
+    Just (w8, rest) ->
+      let nextState = runWirthStep s w8
+      in runWirth nextState rest
 
 runWirthStep :: ParserState -> Word8 -> ParserState
+
+
+runWirthStep state 0x0A
+  | currentState state == ExpectFinalCLRF =
+      state {currentState =Success  , currentIndex = currentIndex state , parsed =  parsed state}
+
+
+runWirthStep state 0x0D
+  | currentState state == HeaderName =
+      state {currentState = ExpectFinalCLRF, currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
+
 
 runWirthStep state 0x0D 
   | currentState state == HeaderValue =
