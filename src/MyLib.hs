@@ -11,6 +11,9 @@ data ParserStatus
   | Version
   | Error
   | Finish
+  |ExpectCLRF
+  |HeaderName
+  |HeaderValue
   deriving (Show, Eq)
 
 data ParserState = ParserState
@@ -49,6 +52,27 @@ runWirth s b = case B.uncons b of
      in runWirth nextState rest
 
 runWirthStep :: ParserState -> Word8 -> ParserState
+
+
+runWirthStep state 0x0A
+  | currentState state == ExpectCLRF =
+      state {currentState = HeaderName , currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
+
+
+runWirthStep state 0x0D
+  | currentState state == Version =
+      state {currentState = ExpectCLRF, currentIndex = currentIndex state + 1, parsed = currentIndex state  : parsed state}
+
+
+runWirthStep state 0x20
+  | currentState state == URI =
+      state {currentState = Version, currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
+
+runWirthStep state w8
+  | currentState state == URI  =
+      state {currentState = URI, currentIndex = currentIndex state + 1}
+
+
 runWirthStep state 0x20
   | currentState state == Method && currentIndex state < 8 =
       ParserState {currentState = URI, currentIndex = currentIndex state + 1, parsed = currentIndex state + 1  : parsed state}
@@ -58,4 +82,5 @@ runWirthStep state w8
 runWirthStep state w8
   | currentState state == Method && currentIndex state < 8 =
       state {currentState = Method, currentIndex = currentIndex state + 1}
+
 runWirthStep s _ = s
