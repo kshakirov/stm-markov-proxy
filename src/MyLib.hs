@@ -25,9 +25,6 @@ data ParserState = ParserState
   }
   deriving (Show, Eq)
 
-someFunc :: IO ()
-someFunc = putStrLn "someFunc"
-
 runMarkovStep :: B.ByteString -> B.ByteString -> B.ByteString -> (B.ByteString, Bool)
 runMarkovStep s t r =
   let (before, after) = B.breakSubstring t s
@@ -116,3 +113,11 @@ runWirthStep state w8
       state {currentState = Method, currentIndex = currentIndex state + 1}
 
 runWirthStep s _ = s
+
+
+
+extractURI ::  B.ByteString  -> [Int] -> B.ByteString
+extractURI s indexList =
+  let rIndexList = reverse indexList
+      result = B.drop (rIndexList !! 2)  (B.take (rIndexList !! 3) s)
+      in result
