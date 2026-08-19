@@ -116,8 +116,8 @@ runWirthStep s _ = s
 
 
 
-extractURI ::  B.ByteString  -> [Int] -> B.ByteString
-extractURI s indexList =
-  let rIndexList = reverse indexList
+extractURI ::  B.ByteString  -> ParserState -> B.ByteString
+extractURI s state =
+  let rIndexList = reverse (parsed  state)
       result = B.drop (rIndexList !! 2)  (B.take (rIndexList !! 3) s)
       in result
