@@ -78,9 +78,15 @@ runWirthStep state 0x3A
   | currentState state == HeaderName =
       state {currentState = HeaderValue, currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
 
+runWirthStep state 0x0D
+  | currentState state == HeaderName  =
+      state {currentState =Success, currentIndex = currentIndex state + 1}
+
 runWirthStep state w8
   | currentState state == HeaderName  =
       state {currentState =HeaderName, currentIndex = currentIndex state + 1}
+
+
 
 
 runWirthStep state 0x0A
@@ -116,8 +122,10 @@ runWirthStep s _ = s
 
 
 
-extractURI ::  B.ByteString  -> ParserState -> B.ByteString
-extractURI s state =
-  let rIndexList = reverse (parsed  state)
-      result = B.drop (rIndexList !! 2)  (B.take (rIndexList !! 3) s)
-      in result
+extractURI ::  B.ByteString  -> ParserState -> Maybe B.ByteString
+extractURI s parserState = case (currentState parserState) of
+  HeaderName -> 
+    let rIndexList = reverse (parsed  parserState) 
+    in Just (B.drop (rIndexList !! 1)  (B.take (rIndexList !! 2) s))
+  Error  -> Nothing
+  _ -> Nothing
