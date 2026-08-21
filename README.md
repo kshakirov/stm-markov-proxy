@@ -12,3 +12,9 @@
 - Развернут сетевой каркас диспетчера (IPv4 сокет на localhost).
 - Настроена многопоточная обработка входящих соединений через легкие зеленые потоки GHC (`forkIO`).
 - Журнал архитектурных решений ведется в формате LaTeX в директории `docs/adr/`.
+
+## Ключевой архитектурный тезис
+
+> **Build the proxy, don’t configure the proxy.**
+
+SMP строит узкий proxy automaton под конкретное приложение, а не настраивает один универсальный runtime. Подробности: [Specialized Application Proxy Automaton](docs/specialized-application-proxy-automaton.md) и [ADR-0010](docs/adr/0010-build-the-proxy.md).
