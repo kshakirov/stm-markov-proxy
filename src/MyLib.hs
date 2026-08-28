@@ -126,6 +126,9 @@ runWirthStep s _ = s
 
 
 
+
+
+
 extractURI ::  B.ByteString  -> ParserState -> Maybe B.ByteString
 extractURI s parserState = case (currentState parserState) of
   HeaderName -> 
@@ -156,3 +159,24 @@ testExtractAll =
         bs = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
         ps = runWirth s bs
     in extractAll bs ps 
+
+testRunWirith =
+  let s =  ParserState{currentState = Method, currentIndex =0, parsed =[0]}
+--      bs = "GET /api/v1/users/123/orders?format=json HTTP/1.1\r\n"
+      bs = "GET /api/v1/users/123/orders?"
+      ps =  runWirth s bs
+      bbs = "format=json HTTP/1.1\r\n"
+ in runWirth ps  (B.concat [bs, bbs, "\r\n"])
+
+
+
+testRunWirithByByte :: ParserState -> B.ByteString ->   ParserState
+testRunWirithByByte state left = case (B.uncons left) of 
+  Just (x,xs) -> testRunWirithByByte   (runWirth state (B.pack [x]))  xs
+  Nothing -> state
+
+test_testRunWirithByByte =
+    let s =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
+        left = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
+ in  testRunWirithByByte  s  left
+  

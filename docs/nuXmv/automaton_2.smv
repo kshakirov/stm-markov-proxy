@@ -1,0 +1,62 @@
+MODULE main
+
+  VAR
+    state : { reqMethod, reqUri, reqVersion, expectCRLF, headerName, headerValue, expectFinalLF, success, error };
+
+IVAR
+    action : { none, space, carriage, newLine, byteSeq, colon, quotes };
+
+ASSIGN
+  init(state) := reqMethod;
+
+  next(state) := case 
+    -- 1. Метод (GET, POST, etc.)
+    state = reqMethod & action = byteSeq  : reqMethod;
+    state = reqMethod & action = space    : reqUri;
+
+    -- 2. URI (/index.html)
+    state = reqUri & action = byteSeq     : reqUri;
+    state = reqUri & action = space       : reqVersion;
+
+    -- 3. Версия HTTP (HTTP/1.1)
+    state = reqVersion & action = byteSeq : reqVersion;
+    state = reqVersion & action = carriage: expectCRLF;
+
+    -- 4. Ожидание \n после первой строки запроса или значения заголовка
+    state = expectCRLF & action = newLine : headerName;
+
+    -- 5. Имя заголовка (Host, Content-Type...) 
+    state = headerName & action = byteSeq : headerName;
+    state = headerName & action = colon   : headerValue;
+    -- ВАЖНО: Если в headerName пришел carriage (\r), значит заголовок пустой -> начался 2-й CRLF!
+    state = headerName & action = carriage: expectFinalLF;
+
+    -- 6. Значение заголовка
+    state = headerValue & action = byteSeq : headerValue;
+    state = headerValue & action = space    : headerValue;
+    state = headerValue & action = quotes   : headerValue;
+    state = headerValue & action = colon    : headerValue;
+    state = headerValue & action = carriage : expectCRLF;
+
+    -- 7. Ожидание финального \n (Завершение двойного CRLF \r\n\r\n)
+    state = expectFinalLF & action = newLine : success;
+
+    -- 8. Терминальные состояния
+    state = success : success;
+    state = error   : error;
+
+    -- Фоллбэк на любые невалидные символы/переходы
+    TRUE : error;
+  esac;
+
+FAIRNESS action = carriage;
+
+------------------------------------------------------------------
+-- LTL Спецификации для проверки в nuXmv
+------------------------------------------------------------------
+
+-- Если заголовок закончился двойным CRLF (\r\n\r\n), мы ГАРАНТИРОВАННО приходим в success
+LTLSPEC G (state = expectFinalLF & action = newLine -> X (state = success))
+
+-- Гарантия отсутствия зависания: автомат всегда завершится в success или error
+LTLSPEC F (state = success | state = error)

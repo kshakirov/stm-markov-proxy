@@ -1,0 +1,16 @@
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# Cabal build output
+dist-newstyle/
+
+# Editor backup files
+*~
+
+# LaTeX intermediate files
+*.aux
+*.log
+
+# Local Codex operating context; intentionally never committed.
+AGENTS.md
