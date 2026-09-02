@@ -4,7 +4,7 @@ state: OPEN
 state_reason: 
 author: kshakirov
 created_at: 2026-08-28T04:53:23Z
-updated_at: 2026-08-28T07:10:38Z
+updated_at: 2026-08-28T07:53:58Z
 closed_at: 
 url: https://github.com/kshakirov/stm-markov-proxy/issues/6
 labels: []
@@ -332,4 +332,8 @@ bounded headers buffer → Early Decision → Local Rewrite → body Passthrough
 
 Семантика body пока головная боль backend. Наша головная боль — не потерять и не переставить байты. Keep-alive, `Content-Length`, chunked framing и Late Decision берём отдельным заходом; для первого эксперимента можно честно ограничиться одним запросом на соединение / `Connection: close`.
 
+
+### kshakirov — 2026-08-28T07:53:58Z
+
+Рассмотреть идею обработчика как замыкания 
 
