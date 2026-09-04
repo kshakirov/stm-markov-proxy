@@ -180,3 +180,7 @@ test_testRunWirithByByte =
         left = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
  in  testRunWirithByByte  s  left
   
+
+requestStreamAutomaton :: B.ByteString -> Bool
+requestStreamAutomaton s = True
+      

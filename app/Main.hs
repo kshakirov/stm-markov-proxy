@@ -64,10 +64,11 @@ listenAndServe = do
 
   env <- ask
   let name = (hostName . proxyConfig) env
+  let port_num = (port . proxyConfig) env
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
-  liftIO $ putStrLn $ "The host is " ++ name
-  socket <-  liftIO  $ openListeningSocket 9000
+  liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
+  socket <-  liftIO  $ openListeningSocket port_num
   forever $ do 
     (conn, addr) <- liftIO $ S.accept socket
     liftIO $ forkIO (runReaderT (handleClient conn) env)
