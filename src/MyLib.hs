@@ -188,13 +188,15 @@ test_testRunWirithByByte =
  in  testRunWirithByByte  s  left
   
 
-requestStreamAutomaton :: B.ByteString -> B.ByteString -> ParserState->  (RequestStreamAutomatonStatus , ParserState)
+requestStreamAutomaton :: B.ByteString -> B.ByteString -> ParserState->  (RequestStreamAutomatonStatus , ParserState, B.ByteString)
 requestStreamAutomaton body fragment  ws_in =
-    let ws_out =  runWirth ws_in  fragment in
-    case (currentState ws_out) of
-      Success -> (RSA_Finished, ws_out)
-      Error -> (RSA_Error,ws_out)
-      _-> (RSA_NeedsMoreData, ws_out)
+    let  n_body = B.concat [body, fragment] 
+         ws_out =  runWirth ws_in  fragment
+         in
+      case (currentState ws_out) of
+        Success -> (RSA_Finished, ws_out,n_body)
+        Error -> (RSA_Error,ws_out, n_body)
+        _-> (RSA_NeedsMoreData, ws_out,n_body)
       
       
     

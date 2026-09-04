@@ -67,13 +67,13 @@ listenAndServe = do
   let port_num = (port . proxyConfig) env
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
-  let body = ""
+  let requestBuffer = ""
   let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0]}
   liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
   socket <-  liftIO  $ openListeningSocket name port_num
   forever $ do 
     (conn, addr) <- liftIO $ S.accept socket
-    liftIO $ forkIO (runReaderT (handleClient conn body wirthParserState ) env)
+    liftIO $ forkIO (runReaderT (handleClient conn requestBuffer wirthParserState ) env)
 
     -- здесь будет наш форк ищ 
 --    forkIO $ handleClient conn 
@@ -129,7 +129,7 @@ openListeningSocket hostName portNum = do
 
 handleClient:: Socket -> B.ByteString ->ParserState ->  ProxyM ()
 
-handleClient s body ws= do
+handleClient s requestBuffer ws= do
   env <- ask
 
   let ends =( backends  . proxyConfig)env
@@ -138,13 +138,21 @@ handleClient s body ws= do
   liftIO $ putStrLn  (show sb)
   let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
   request <- liftIO $ recv s 1024
---  let replaced = runMarkov [("GET", "POST")]
-  let (status, wirthState) = requestStreamAutomaton body request ws
-  liftIO $putStrLn (show status)
-  liftIO $putStrLn (show wirthState)
-  case status of
-    RSA_Finished -> do 
-      liftIO $ sendAll s resp 
-      liftIO $ S.close s
-    _ -> handleClient s body wirthState
+  if B.null request then 
+    do
+      liftIO $ putStrLn "Closed by the client"
+      
+  else  do
+      let (status, wirthState, acc_requestBuffer) = requestStreamAutomaton requestBuffer request ws 
+      liftIO $putStrLn (show status)
+      liftIO $putStrLn (show wirthState)
+      case status of
+        RSA_Finished -> do 
+          liftIO $ sendAll s resp 
+          liftIO $ S.close s
+        RSA_Error -> do
+-- here must error response but for the time being 
+          liftIO $ sendAll s resp 
+          liftIO $ S.close s
+        _ -> handleClient s acc_requestBuffer wirthState
   return ()
