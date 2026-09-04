@@ -16,7 +16,7 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..))
+import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..))
 
 data Env = Env
   { proxyConfig :: Config,
@@ -68,11 +68,12 @@ listenAndServe = do
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
   let body = ""
+  let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0]}
   liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
   socket <-  liftIO  $ openListeningSocket name port_num
   forever $ do 
     (conn, addr) <- liftIO $ S.accept socket
-    liftIO $ forkIO (runReaderT (handleClient conn body) env)
+    liftIO $ forkIO (runReaderT (handleClient conn body wirthParserState ) env)
 
     -- здесь будет наш форк ищ 
 --    forkIO $ handleClient conn 
@@ -126,9 +127,9 @@ openListeningSocket hostName portNum = do
   S.listen sock 1024
   return sock
 
-handleClient:: Socket -> B.ByteString ->  ProxyM ()
+handleClient:: Socket -> B.ByteString ->ParserState ->  ProxyM ()
 
-handleClient s body= do
+handleClient s body ws= do
   env <- ask
 
   let ends =( backends  . proxyConfig)env
@@ -138,12 +139,12 @@ handleClient s body= do
   let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
   request <- liftIO $ recv s 1024
 --  let replaced = runMarkov [("GET", "POST")]
-  let (status, wirthState) = requestStreamAutomaton body request
+  let (status, wirthState) = requestStreamAutomaton body request ws
   liftIO $putStrLn (show status)
   liftIO $putStrLn (show wirthState)
   case status of
     RSA_Finished -> do 
       liftIO $ sendAll s resp 
       liftIO $ S.close s
-    _ -> handleClient s body
+    _ -> handleClient s body wirthState
   return ()

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..)) where
+module MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..),
+             ParserState(..), ParserStatus(..)) where
 
 import qualified Data.ByteString as B 
 import Data.Word
@@ -187,13 +188,13 @@ test_testRunWirithByByte =
  in  testRunWirithByByte  s  left
   
 
-requestStreamAutomaton :: B.ByteString -> B.ByteString ->  (RequestStreamAutomatonStatus , ParserState)
-requestStreamAutomaton body fragment  =
-    let ws =  runWirth  ParserState{currentState = Method, currentIndex =0, parsed =[0]} fragment in
-    case (currentState ws) of
-      Success -> (RSA_Finished, ws)
-      Error -> (RSA_Error,ws)
-      _-> (RSA_NeedsMoreData, ws)
+requestStreamAutomaton :: B.ByteString -> B.ByteString -> ParserState->  (RequestStreamAutomatonStatus , ParserState)
+requestStreamAutomaton body fragment  ws_in =
+    let ws_out =  runWirth ws_in  fragment in
+    case (currentState ws_out) of
+      Success -> (RSA_Finished, ws_out)
+      Error -> (RSA_Error,ws_out)
+      _-> (RSA_NeedsMoreData, ws_out)
       
       
     
