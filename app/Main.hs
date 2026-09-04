@@ -141,7 +141,7 @@ handleClient s requestBuffer ws= do
   if B.null request then 
     do
       liftIO $ putStrLn "Closed by the client"
-      
+      liftIO $ S.close s
   else  do
       let (status, wirthState, acc_requestBuffer) = requestStreamAutomaton requestBuffer request ws 
       liftIO $putStrLn (show status)
