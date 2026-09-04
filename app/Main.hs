@@ -16,7 +16,7 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import MyLib (runMarkov)
+import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..))
 
 data Env = Env
   { proxyConfig :: Config,
@@ -67,12 +67,13 @@ listenAndServe = do
   let port_num = (port . proxyConfig) env
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
+  let body = ""
   liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
   socket <-  liftIO  $ openListeningSocket name port_num
   forever $ do 
     (conn, addr) <- liftIO $ S.accept socket
-    liftIO $ forkIO (runReaderT (handleClient conn) env)
-    liftIO $ print 1 
+    liftIO $ forkIO (runReaderT (handleClient conn body) env)
+
     -- здесь будет наш форк ищ 
 --    forkIO $ handleClient conn 
   liftIO $ print socket 
@@ -125,19 +126,24 @@ openListeningSocket hostName portNum = do
   S.listen sock 1024
   return sock
 
-handleClient:: Socket -> ProxyM ()
+handleClient:: Socket -> B.ByteString ->  ProxyM ()
 
-handleClient s = do
+handleClient s body= do
   env <- ask
-  let name = (hostName . proxyConfig) env
+
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
   sb <- liftIO $ atomically $ nextBackendIdxTx tVarState ends
   liftIO $ putStrLn  (show sb)
   let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
   request <- liftIO $ recv s 1024
-  let replaced = runMarkov [("GET", "POST")] request
-  liftIO $putStrLn (show replaced)
-  liftIO $ sendAll s resp
-  liftIO $ S.close s 
+--  let replaced = runMarkov [("GET", "POST")]
+  let (status, wirthState) = requestStreamAutomaton body request
+  liftIO $putStrLn (show status)
+  liftIO $putStrLn (show wirthState)
+  case status of
+    RSA_Finished -> do 
+      liftIO $ sendAll s resp 
+      liftIO $ S.close s
+    _ -> handleClient s body
   return ()
