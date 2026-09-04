@@ -68,7 +68,7 @@ listenAndServe = do
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
   liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
-  socket <-  liftIO  $ openListeningSocket port_num
+  socket <-  liftIO  $ openListeningSocket name port_num
   forever $ do 
     (conn, addr) <- liftIO $ S.accept socket
     liftIO $ forkIO (runReaderT (handleClient conn) env)
@@ -82,10 +82,11 @@ listenAndServe = do
 
 main :: IO ()
 main = do
-  putStrLn "Hello, Haskell!"
+  putStrLn "Starting stm-proxy-markov!"
   let initProxyState = ProxyState {nextBackendIndex = 0}
   refProxyTVarState <- newTVarIO initProxyState
-  let c = Config {hostName = "localhost", port = 8989, backends=3}
+  -- for the time bieing hardcoded TODO move to config
+  let c = Config {hostName = "127.0.0.1", port = 8989, backends=3}
 
   let e = Env {proxyConfig = c, backendConfigs = [], proxyTVarState = refProxyTVarState}
   
@@ -114,10 +115,10 @@ nextBackendIdxTx stateRef totalBackends = do
   return currentIdx
 
 
-openListeningSocket :: Int -> IO Socket
-openListeningSocket portNum = do
+openListeningSocket ::String -> Int -> IO Socket
+openListeningSocket hostName portNum = do
   let hints = S.defaultHints { S.addrFlags = [S.AI_PASSIVE], S.addrSocketType = S.Stream }
-  addrInfo <- head <$> S.getAddrInfo (Just hints) (Just "127.0.0.1") (Just (show portNum))
+  addrInfo <- head <$> S.getAddrInfo (Just hints) (Just hostName) (Just (show portNum))
   sock <- S.socket (S.AF_INET) (S.addrSocketType addrInfo) (S.addrProtocol addrInfo)
   S.setSocketOption sock S.ReuseAddr 1
   S.bind sock (S.addrAddress addrInfo)
