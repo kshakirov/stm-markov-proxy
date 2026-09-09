@@ -16,7 +16,7 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..))
+import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite)
 
 data Env = Env
   { proxyConfig :: Config,
@@ -145,9 +145,16 @@ handleClient s requestBuffer ws= do
   else  do
       let (status, wirthState, acc_requestBuffer) = requestStreamAutomaton requestBuffer request ws 
       liftIO $putStrLn (show status)
-      liftIO $putStrLn (show wirthState)
+      liftIO $putStrLn (show $ parsed wirthState)
+      liftIO $putStrLn (show acc_requestBuffer)
+      
+      
       case status of
-        RSA_Finished -> do 
+        RSA_Finished -> do
+          liftIO $putStrLn "Finished Case"
+          let newUri = requestRewrite acc_requestBuffer wirthState [("v1","BB")]
+          liftIO $print  newUri
+
           liftIO $ sendAll s resp 
           liftIO $ S.close s
         RSA_Error -> do

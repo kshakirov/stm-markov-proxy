@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..),
-             ParserState(..), ParserStatus(..)) where
+             ParserState(..), ParserStatus(..), requestRewrite) where
 
 import qualified Data.ByteString as B 
 import Data.Word
@@ -138,9 +138,9 @@ runWirthStep s _ = s
 
 extractURI ::  B.ByteString  -> ParserState -> Maybe B.ByteString
 extractURI s parserState = case (currentState parserState) of
-  HeaderName -> 
+  Success -> 
     let rIndexList = reverse (parsed  parserState)
-    in Just (B.drop (rIndexList !! 1)  (B.take (rIndexList !! 2) s))
+    in Just (B.drop (rIndexList !! 1)  (B.take (rIndexList !! 3) s))
   Error  -> Nothing
   _ -> Nothing
 
@@ -186,7 +186,15 @@ test_testRunWirithByByte =
     let s =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
         left = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
  in  testRunWirithByByte  s  left
-  
+
+
+testRunMarkovRewrite =
+  let ms = testExtractURI 
+      rules  = [("v1","BB")] in
+            case ms of
+              Just uri -> runMarkov  rules uri
+              Nothing -> ""
+          
 
 requestStreamAutomaton :: B.ByteString -> B.ByteString -> ParserState->  (RequestStreamAutomatonStatus , ParserState, B.ByteString)
 requestStreamAutomaton body fragment  ws_in =
@@ -200,9 +208,22 @@ requestStreamAutomaton body fragment  ws_in =
       
       
     
-     
-        
+requestRewrite ::  B.ByteString -> ParserState -> [(B.ByteString, B.ByteString)] -> B.ByteString
+requestRewrite s parserState rules =
+  let ms = extractURI s parserState in 
+    case ms of
+      Just uri -> runMarkov rules uri
+      Nothing -> "no uri"
   
+
+testRequestRewrite =
+  let state =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
+      req = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\nn\r\n"
+      newState = runWirth state req
+      rules  = [("v2","BB")]
+  in requestRewrite req newState rules 
+        
+
     
   
   
