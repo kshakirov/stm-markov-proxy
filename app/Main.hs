@@ -89,8 +89,8 @@ main = do
   refProxyTVarState <- newTVarIO initProxyState
   -- for the time bieing hardcoded TODO move to config
   let c = Config {hostName = "127.0.0.1", port = 8989, backends=3}
-
-  let e = Env {proxyConfig = c, backendConfigs = [], proxyTVarState = refProxyTVarState}
+  let b1 = BackendConfig{appName="127.0.0.1", runningPort=8081}
+  let e = Env {proxyConfig = c, backendConfigs = [b1], proxyTVarState = refProxyTVarState}
   
   runReaderT listenAndServe e
 
@@ -136,6 +136,7 @@ handleClient s requestBuffer ws= do
   let tVarState = proxyTVarState env
   sb <- liftIO $ atomically $ nextBackendIdxTx tVarState ends
   liftIO $ putStrLn  (show sb)
+  let currentBackend = (backendConfigs  env )  !! 0
   let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
   request <- liftIO $ recv s 1024
   if B.null request then 
@@ -147,19 +148,40 @@ handleClient s requestBuffer ws= do
       liftIO $putStrLn (show status)
       liftIO $putStrLn (show $ parsed wirthState)
       liftIO $putStrLn (show acc_requestBuffer)
-      
+
       
       case status of
         RSA_Finished -> do
           liftIO $putStrLn "Finished Case"
           let newUri = requestRewrite acc_requestBuffer wirthState [("v1","BB")]
           liftIO $print  newUri
-
-          liftIO $ sendAll s resp 
-          liftIO $ S.close s
+          b_socket <-liftIO $ connectBackend (appName currentBackend) (runningPort currentBackend)
+          liftIO $ pipeResponse b_socket s acc_requestBuffer
+--          liftIO $ sendAll s resp 
+ --         liftIO $ S.close s
         RSA_Error -> do
 -- here must error response but for the time being 
           liftIO $ sendAll s resp 
           liftIO $ S.close s
         _ -> handleClient s acc_requestBuffer wirthState
+  return ()
+
+
+connectBackend::String->Int ->IO Socket
+connectBackend hostName portNum = do
+  let hints = S.defaultHints { S.addrFlags = [S.AI_PASSIVE], S.addrSocketType = S.Stream }
+  addrInfo <- head <$> S.getAddrInfo (Just hints) (Just hostName) (Just (show portNum))
+  sock <- S.socket (S.AF_INET) (S.addrSocketType addrInfo) (S.addrProtocol addrInfo)
+  S.connect sock (S.addrAddress addrInfo)
+  return sock
+
+
+  
+pipeResponse ::Socket -> Socket -> B.ByteString -> IO ()
+pipeResponse s_b s_c payload = do
+  sendAll s_b payload
+  response <- recv s_b 1024 -- for the time being once
+  S.close s_b
+  sendAll s_c response
+  S.close s_c
   return ()
