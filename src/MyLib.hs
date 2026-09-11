@@ -26,6 +26,21 @@ data ParserState = ParserState
   }
   deriving (Show, Eq)
 
+data RuleType = Normal | Terminal 
+  deriving (Show, Eq)
+
+data MarkovRule = MarkovRule
+  { pattern     :: B.ByteString
+  , replacement :: B.ByteString
+  , ruleType    :: RuleType
+  } deriving (Show, Eq)
+
+-- 3. Система НАМ — это упорядоченный список правил
+type MarkovSystem = [MarkovRule]
+
+
+
+
 data RequestStreamAutomatonStatus =
   RSA_Finished
   |RSA_NeedsMoreData
