@@ -16,7 +16,7 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite)
+import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite, RewriteType(..))
 
 data Env = Env
   { proxyConfig :: Config,
@@ -125,7 +125,7 @@ handleClient s requestBuffer ws= do
   let tVarState = proxyTVarState env
   sb <- liftIO $ atomically $ nextBackendIdxTx tVarState ends
   liftIO $ putStrLn  (show sb)
-  let currentBackend = (backendConfigs  env )  !! 0
+  let currentBackend = (backendConfigs  env )  !! sb
   let resp = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 12\r\nConnection: close\r\n\r\nHello, world"
   request <- liftIO $ recv s 1024
   if B.null request then 
@@ -142,12 +142,14 @@ handleClient s requestBuffer ws= do
       case status of
         RSA_Finished -> do
           liftIO $putStrLn "Finished Case"
-          let newUri = requestRewrite acc_requestBuffer wirthState [("v1","BB")]
+          let newPrefix = requestRewrite RewriteMethod acc_requestBuffer wirthState [("v1","BB")]
+          let newUri = requestRewrite RewriteUrl acc_requestBuffer wirthState [("v1","BB")]
+          let newSuffix = requestRewrite RewriteHeader acc_requestBuffer wirthState [("v1","BB")]
+          let newBody = B.concat [newPrefix, newUri, newSuffix]
           liftIO $print  newUri
           b_socket <-liftIO $ connectBackend (appName currentBackend) (runningPort currentBackend)
-          liftIO $ pipeResponse b_socket s acc_requestBuffer
---          liftIO $ sendAll s resp 
- --         liftIO $ S.close s
+          liftIO $ pipeResponse b_socket s newBody
+
         RSA_Error -> do
 -- here must error response but for the time being 
           liftIO $ sendAll s resp 

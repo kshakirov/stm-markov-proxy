@@ -4,7 +4,7 @@ state: OPEN
 state_reason: 
 author: kshakirov
 created_at: 2026-09-04T03:51:00Z
-updated_at: 2026-09-09T16:59:51Z
+updated_at: 2026-09-11T06:19:18Z
 closed_at: 
 url: https://github.com/kshakirov/stm-markov-proxy/issues/7
 labels: []
@@ -352,5 +352,43 @@ Proxy прошёл многокусковый вход и вернул `HTTP 200
 Итого: потеря первого chunk на стадии rewrite устранена. Теперь Марков впервые
 включён в живой завершённый путь после Вирта, но до настоящего forwarding ещё
 один отдельный этап.
+
+
+### kshakirov — 2026-09-11T06:19:18Z
+
+Сегодня встроил первый полный URI rewrite в настоящий proxy-тракт.
+
+После `RSA_Finished` запрос теперь режется по offsets на три части:
+
+```text
+Prefix | Markov(original URI) | Suffix
+```
+
+Для первого подхода части снова собираются в один строгий `ByteString`, и уже
+этот новый полный request отправляется backend. Режимы перерисовщика пока
+обозначены явно как `RewriteMethod`, `RewriteUrl`, `RewriteHeader`; реально
+Марков сейчас включён для URI, а prefix/suffix выделяются по таблице `parsed`.
+
+Сборка проходит. Живой тракт через `127.0.0.1:8989` в backend
+`127.0.0.1:8081` возвращает `HTTP 200`, когда выбран существующий backend.
+
+Одновременно серия из трёх запросов вскрыла следующий точный дефект:
+
+```text
+backends = 3
+backendConfigs = [b1]
+```
+
+Поэтому `backendConfigs !! sb` падает при `sb = 1` и `sb = 2`; на `sb = 0`
+запрос проходит. В проверке два запроса ушли в timeout, третий получил `200`.
+
+Кроме того, `nextBackendIdxTx` пока вызывается на каждом рекурсивном `recv`.
+Для многокускового запроса backend index меняется между chunks, хотя выбор
+должен происходить один раз для готового запроса либо сохраняться в состоянии
+обработчика.
+
+Итого: первый `full request reconstruction → backend → response → client`
+собран. Следующий маленький шаг — связать размер round-robin с реальным
+`backendConfigs` и определить единственную точку выбора backend.
 
 

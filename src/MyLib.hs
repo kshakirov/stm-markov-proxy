@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..),
-             ParserState(..), ParserStatus(..), requestRewrite) where
+             ParserState(..), ParserStatus(..), requestRewrite, RewriteType(..)) where
 
 import qualified Data.ByteString as B 
 import Data.Word
@@ -19,6 +19,12 @@ data ParserStatus
   |ExpectFinalCLRF
   deriving (Show, Eq)
 
+
+data RewriteType
+  = RewriteMethod
+  |RewriteUrl
+  |RewriteHeader
+  
 data ParserState = ParserState
   { currentState :: ParserStatus,
     currentIndex :: Int,
@@ -223,20 +229,30 @@ requestStreamAutomaton body fragment  ws_in =
       
       
     
-requestRewrite ::  B.ByteString -> ParserState -> [(B.ByteString, B.ByteString)] -> B.ByteString
-requestRewrite s parserState rules =
+requestRewrite :: RewriteType ->   B.ByteString -> ParserState -> [(B.ByteString, B.ByteString)] -> B.ByteString
+requestRewrite RewriteUrl s parserState rules =
   let ms = extractURI s parserState in 
     case ms of
       Just uri -> runMarkov rules uri
       Nothing -> "no uri"
-  
+
+requestRewrite RewriteMethod s pareserState rules = 
+  let rIndexList = reverse (parsed  pareserState)
+  in B.take (rIndexList !! 1) s
+
+
+requestRewrite RewriteHeader s pareserState rules =
+  let rIndexList = reverse (parsed  pareserState)
+  in B.drop (rIndexList !! 3)   s
 
 testRequestRewrite =
   let state =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
-      req = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\nn\r\n"
+      req = "GET /api/v2/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\nn\r\n"
       newState = runWirth state req
       rules  = [("v2","BB")]
-  in requestRewrite req newState rules 
+  in requestRewrite RewriteUrl
+
+ req newState rules 
         
 
     
