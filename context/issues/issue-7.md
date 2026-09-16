@@ -4,7 +4,7 @@ state: OPEN
 state_reason: 
 author: kshakirov
 created_at: 2026-09-04T03:51:00Z
-updated_at: 2026-09-11T06:19:18Z
+updated_at: 2026-09-16T14:35:20Z
 closed_at: 
 url: https://github.com/kshakirov/stm-markov-proxy/issues/7
 labels: []
@@ -390,5 +390,59 @@ backendConfigs = [b1]
 Итого: первый `full request reconstruction → backend → response → client`
 собран. Следующий маленький шаг — связать размер round-robin с реальным
 `backendConfigs` и определить единственную точку выбора backend.
+
+
+### kshakirov — 2026-09-16T14:35:20Z
+
+Сегодня добавили нормальный Hspec-контур вместо россыпи ручных `test...` внутри
+боевого модуля.
+
+Тесты теперь разложены по смыслу:
+
+```text
+MarkovSpec
+WirthSpec
+RequestRewriteSpec
+```
+
+Первый же прогон оказался полезнее ручного REPL. Он разделил две разные вещи:
+
+- сам Марков чисто переписывает `/api/v1/users/123` в `/api/BB/users/123`;
+- старый `extractURI` захватывал пробел перед URI.
+
+После сдвига начала URI тест чистого URI стал зелёным:
+
+```text
+/api/BB/users/123
+```
+
+Но тест полной реконструкции теперь честно красный:
+
+```text
+expected: GET /api/BB/users/123 ...
+actual:   GET/api/BB/users/123 ...
+```
+
+То есть пробел правильно исключён из URI, но пока не включён в `Prefix`.
+Следующий точный шаг — закрепить геометрию:
+
+```text
+Prefix = "GET "
+URI    = "/api/BB/users/123"
+Suffix = " HTTP/1.1..."
+```
+
+Текущее состояние набора: 8 scenarios, 4 green, 1 failed, 3 pending. Pending
+оставлены как явный план для потокового Вирта: offsets между chunks, разрезы
+`CRLF CRLF` и malformed request line.
+
+Параллельно поправлен жизненный цикл выбора backend: количество берётся из
+`length backendConfigs`, индекс выбирается один раз после `accept` и тем же
+значением проходит через все рекурсивные `recv`. Серия коротких запросов и URI
+примерно 10 КБ вернула `HTTP 200` без прежних timeout.
+
+Красный тест коммитим намеренно: он точно фиксирует оставшийся один байт и не
+даст снова замаскировать неверные структурные границы тем, что полный request
+случайно выглядит правильным.
 
 

@@ -161,7 +161,7 @@ extractURI ::  B.ByteString  -> ParserState -> Maybe B.ByteString
 extractURI s parserState = case (currentState parserState) of
   Success -> 
     let rIndexList = reverse (parsed  parserState)
-    in Just (B.drop (rIndexList !! 1)  (B.take (rIndexList !! 3) s))
+    in Just (B.drop ((rIndexList !! 1) + 1)  (B.take (rIndexList !! 3) s))
   Error  -> Nothing
   _ -> Nothing
 
