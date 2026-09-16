@@ -77,9 +77,10 @@ main = do
   let initProxyState = ProxyState {nextBackendIndex = 0}
   refProxyTVarState <- newTVarIO initProxyState
   -- for the time bieing hardcoded TODO move to config
-  let c = Config {hostName = "127.0.0.1", port = 8989, backends=3}
-  let b1 = BackendConfig{appName="127.0.0.1", runningPort=8081}
-  let e = Env {proxyConfig = c, backendConfigs = [b1], proxyTVarState = refProxyTVarState}
+  let bs =[ BackendConfig{appName="127.0.0.1", runningPort=8081}]
+  let c = Config {hostName = "127.0.0.1", port = 8989, backends=length bs}
+
+  let e = Env {proxyConfig = c, backendConfigs = bs, proxyTVarState = refProxyTVarState}
   
   runReaderT listenAndServe e
 
