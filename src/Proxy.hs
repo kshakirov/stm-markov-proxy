@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..),
+module Proxy (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..),
              ParserState(..), ParserStatus(..), requestRewrite, RewriteType(..)) where
 
 import qualified Data.ByteString as B 

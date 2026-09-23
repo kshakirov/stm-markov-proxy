@@ -16,7 +16,7 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import MyLib (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite, RewriteType(..))
+import Proxy (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite, RewriteType(..))
 
 data Env = Env
   { proxyConfig :: Config,
