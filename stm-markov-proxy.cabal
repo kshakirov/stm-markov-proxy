@@ -62,7 +62,7 @@ library
     exposed-modules:  Proxy
 
     -- Modules included in this library but not exported.
-    other-modules: Proxy.Wirth Proxy.Types
+    other-modules: Proxy.Wirth Proxy.Types Proxy.Markov
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
