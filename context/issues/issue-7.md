@@ -4,7 +4,7 @@ state: OPEN
 state_reason: 
 author: kshakirov
 created_at: 2026-09-04T03:51:00Z
-updated_at: 2026-09-16T14:35:20Z
+updated_at: 2026-09-23T18:47:29Z
 closed_at: 
 url: https://github.com/kshakirov/stm-markov-proxy/issues/7
 labels: []
@@ -445,4 +445,18 @@ Suffix = " HTTP/1.1..."
 даст снова замаскировать неверные структурные границы тем, что полный request
 случайно выглядит правильным.
 
+
+### kshakirov — 2026-09-23T18:47:28Z
+
+Today I cleaned up the library structure so we can keep working without the old `MyLib` junk drawer.
+
+What changed:
+- renamed the public facade from `MyLib` to `Proxy`;
+- split the implementation into `Proxy.Types`, `Proxy.Wirth`, `Proxy.Markov`, and `Proxy.Rewrite`;
+- updated the application and tests to import the new facade;
+- verified that the library and executable build.
+
+The test suite now runs again and exposes the already known reconstruction bug: the space between the method and rewritten URI is lost (`GET/api/...`). I left that behavior visible instead of hiding it.
+
+Next step: simplify the request path into a clean stream. Wirth recognizes bytes incrementally; the method and HTTP version are stored as compact states/codes; only the full URI is retained in a bounded 8 KiB buffer. Overflow must fail explicitly with 414. Selected headers can be accumulated only when the specialized proxy actually needs them; everything else should pass through without offset tables or a full request buffer.
 
