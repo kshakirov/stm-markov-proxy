@@ -3,7 +3,7 @@
 module RequestRewriteSpec (spec) where
 
 import qualified Data.ByteString as B
-import MyLib
+import Proxy
 import Test.Hspec
 
 request :: B.ByteString

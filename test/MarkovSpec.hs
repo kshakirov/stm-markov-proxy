@@ -2,7 +2,7 @@
 
 module MarkovSpec (spec) where
 
-import MyLib (runMarkov)
+import Proxy (runMarkov)
 import Test.Hspec
 
 spec :: Spec
