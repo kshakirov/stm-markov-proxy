@@ -7,90 +7,8 @@ import qualified Data.ByteString as B
 import Data.Word
 import Proxy.Types
 import Proxy.Markov
+import Proxy.Wirth
 
-
-runWirth :: ParserState -> B.ByteString -> ParserState
-runWirth s b = case currentState s of
-  Success -> s
-  Error -> s
-  _  ->  case B.uncons b of
-    Nothing -> s
-    Just (w8, rest) ->
-      let nextState = runWirthStep s w8
-      in runWirth nextState rest
-
-runWirthStep :: ParserState -> Word8 -> ParserState
-
-
-runWirthStep state 0x0A
-  | currentState state == ExpectFinalCLRF =
-      state {currentState =Success  , currentIndex = currentIndex state , parsed =  parsed state}
-
-
-runWirthStep state 0x0D
-  | currentState state == HeaderName =
-      state {currentState = ExpectFinalCLRF, currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
-
-
-runWirthStep state 0x0D 
-  | currentState state == HeaderValue =
-      state {currentState = ExpectCLRF, currentIndex = currentIndex state + 1, parsed = currentIndex state  : parsed state}
-
-runWirthStep state w8
-  | currentState state == HeaderValue  =
-      state {currentState =HeaderValue, currentIndex = currentIndex state + 1}
-
-
-
-runWirthStep state 0x3A
-  | currentState state == HeaderName =
-      state {currentState = HeaderValue, parsed = currentIndex state + 1 : (currentIndex state  : parsed state), currentIndex = currentIndex state + 1}
-
-runWirthStep state 0x0D
-  | currentState state == HeaderName  =
-      state {currentState =Success, currentIndex = currentIndex state + 1}
-
-runWirthStep state w8
-  | currentState state == HeaderName  =
-      state {currentState =HeaderName, currentIndex = currentIndex state + 1}
-
-
-
-
-runWirthStep state 0x0A
-  | currentState state == ExpectCLRF =
-      state {currentState = HeaderName , currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
-
-
-runWirthStep state 0x0D
-  | currentState state == Version =
-      state {currentState = ExpectCLRF,  parsed = currentIndex state  : parsed state, currentIndex = currentIndex state + 1}
-
-runWirthStep state w8
-  | currentState state == Version =
-      state {currentState = Version,  currentIndex = currentIndex state + 1}
-
-
-runWirthStep state 0x20
-  | currentState state == URI =
-      state {currentState = Version,  parsed = currentIndex state + 1 : (currentIndex state  : parsed state), currentIndex = currentIndex state + 1}
-
-runWirthStep state w8
-  | currentState state == URI  =
-      state {currentState = URI, currentIndex = currentIndex state + 1}
-
-
-runWirthStep state 0x20
-  | currentState state == Method && currentIndex state < 8 =
-      ParserState {currentState = URI,  parsed =currentIndex  state + 1 : ( currentIndex state   : parsed state), currentIndex = currentIndex state + 1}
-runWirthStep state w8
-  | currentState state == Method && currentIndex state > 8 =
-      state {currentState = Error, currentIndex = currentIndex state, parsed = parsed state}
-runWirthStep state w8
-  | currentState state == Method && currentIndex state < 8 =
-      state {currentState = Method, currentIndex = currentIndex state + 1}
-
-runWirthStep s _ = s
 
 
 
@@ -114,48 +32,6 @@ extractAll s parserState = case (currentState parserState) of
     in Just rIndexList
   _ -> Nothing
 
-testExtractURI =
-  let s =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
-      --bs = "GET /api/v1/users/123/orders?format=json HTTP/1.1\r\n"
-      bs = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
-      ps = runWirth s bs
-      in extractURI bs ps 
-
-testExtractAll =
-    let s =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
-        --bs = "GET /api/v1/users/123/orders?format=json HTTP/1.1\r\n"
-        bs = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
-        ps = runWirth s bs
-    in extractAll bs ps 
-
-testRunWirith =
-  let s =  ParserState{currentState = Method, currentIndex =0, parsed =[0]}
---      bs = "GET /api/v1/users/123/orders?format=json HTTP/1.1\r\n"
-      bs = "GET /api/v1/users/123/orders?"
-      ps =  runWirth s bs
-      bbs = "format=json HTTP/1.1\r\n"
- in runWirth ps  (B.concat [bs, bbs, "\r\n"])
-
-
-
-testRunWirithByByte :: ParserState -> B.ByteString ->   ParserState
-testRunWirithByByte state left = case (B.uncons left) of 
-  Just (x,xs) -> testRunWirithByByte   (runWirth state (B.pack [x]))  xs
-  Nothing -> state
-
-test_testRunWirithByByte =
-    let s =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
-        left = "GET /api/v1/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
- in  testRunWirithByByte  s  left
-
-
-testRunMarkovRewrite =
-  let ms = testExtractURI 
-      rules  = [("v1","BB")] in
-            case ms of
-              Just uri -> runMarkov  rules uri
-              Nothing -> ""
-          
 
 requestStreamAutomaton :: B.ByteString -> B.ByteString -> ParserState->  (RequestStreamAutomatonStatus , ParserState, B.ByteString)
 requestStreamAutomaton body fragment  ws_in =
