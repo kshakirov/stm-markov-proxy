@@ -50,7 +50,8 @@ data RecognizingData = RecognizingData
 data ParserState = ParserState
   { currentState :: ParserStatus,
     currentIndex :: Int,
-    parsed :: [Int]
+    parsed :: [Int],
+    recognizingData:: RecognizingData
   }
   deriving (Show, Eq)
 
