@@ -77,10 +77,13 @@ runWirthStep state w8
   | currentState state == URI  =
       state {currentState = URI, currentIndex = currentIndex state + 1}
 
-
 runWirthStep state 0x20
   | currentState state == Method && currentIndex state < 8 =
-      ParserState {currentState = URI,  parsed =currentIndex  state + 1 : ( currentIndex state   : parsed state), currentIndex = currentIndex state + 1}
+      let r = recognizeMethod 0x20 (method (recognizingData state)) in
+        case r of
+          Right m  ->   state {currentState = URI, parsed =currentIndex  state + 1 : ( currentIndex state   : parsed state), currentIndex = currentIndex state + 1, recognizingData = (recognizingData state){method=m}}
+          Left e -> state {currentState = e}
+
 runWirthStep state w8
   | currentState state == Method && currentIndex state > 8 =
       state {currentState = Error, currentIndex = currentIndex state, parsed = parsed state}
@@ -117,7 +120,7 @@ recognizeMethod w md =
     3 -> case w of
       0x20 | guess md == PUT -> Right MethodData{guess=PUT, matchingIndex=4}
               | guess md == GET -> Right MethodData{guess=GET, matchingIndex=4}
-      0x41 | guess md == POST -> Right MethodData{guess=POST, matchingIndex=4}
+      0x54 | guess md == POST -> Right MethodData{guess=POST, matchingIndex=4}
       0x43 | guess md == PATCH -> Right MethodData{guess=PATCH, matchingIndex=3}
       _ -> Left Error
     4 -> case w of
