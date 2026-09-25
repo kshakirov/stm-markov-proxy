@@ -16,7 +16,7 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import Proxy (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite, RewriteType(..))
+import Proxy (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite, RewriteType(..), RecognizingData(..),MethodData(..), HttpMethod(..))
 
 data Env = Env
   { proxyConfig :: Config,
@@ -57,7 +57,7 @@ listenAndServe = do
   let requestBuffer = ""
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
-  let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0]}
+  let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0], recognizingData =RecognizingData{method = MethodData{guess = POST, matchingIndex=0}}}
   liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
   socket <-  liftIO  $ openListeningSocket name port_num
   forever $ do 
