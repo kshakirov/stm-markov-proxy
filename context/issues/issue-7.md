@@ -4,7 +4,7 @@ state: OPEN
 state_reason: 
 author: kshakirov
 created_at: 2026-09-04T03:51:00Z
-updated_at: 2026-09-23T18:47:29Z
+updated_at: 2026-09-25T06:17:16Z
 closed_at: 
 url: https://github.com/kshakirov/stm-markov-proxy/issues/7
 labels: []
@@ -459,4 +459,14 @@ What changed:
 The test suite now runs again and exposes the already known reconstruction bug: the space between the method and rewritten URI is lost (`GET/api/...`). I left that behavior visible instead of hiding it.
 
 Next step: simplify the request path into a clean stream. Wirth recognizes bytes incrementally; the method and HTTP version are stored as compact states/codes; only the full URI is retained in a bounded 8 KiB buffer. Overflow must fail explicitly with 414. Selected headers can be accumulated only when the specialized proxy actually needs them; everything else should pass through without offset tables or a full request buffer.
+
+### kshakirov — 2026-09-25T06:17:15Z
+
+Продолжаю разворачивать тракт в чистый поток. Сегодня сделал первый узкий кусок — распознавание метода без хранения его исходных байтов.
+
+Пока сознательно поддерживаются только `GET`, `POST` и `PUT`. Вирт принимает метод побайтно, держит текущую гипотезу и позицию совпадения, а после разделительного пробела оставляет компактное значение `HttpMethod` и переходит к URI. Ошибочный байт переводит парсер в `Error`; индекс после пробела теперь продвигается корректно. Новые типы состояния выведены через фасад `Proxy`, начальное состояние подключено в `Main`.
+
+Executable собирается. Набор тестов запускается с прежним известным красным сценарием реконструкции (`GET/api/...` вместо `GET /api/...`); новый методный шаг дополнительных падений не внёс.
+
+Следующий проход — URI: полный, но ограниченный буфер 8 KiB, явный отказ `414 URI Too Long` при переполнении. Затем таким же потоковым способом закодируем HTTP-версию и начнём выбрасывать старые offset table / accumulated request buffer.
 
