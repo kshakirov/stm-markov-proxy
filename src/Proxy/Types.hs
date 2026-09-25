@@ -39,13 +39,14 @@ data MethodData = MethodData
 
 data UriData = UriData
   {buffer :: B.ByteString,
-   maxLength :: Int}
+   maxLength :: Int
+  }  deriving (Show, Eq)
 
 data RecognizingData = RecognizingData
   {method:: MethodData,
    uriData :: UriData,
-   httpVersion :: Int}
-   
+   httpVersion :: Int
+  }deriving (Show, Eq)
 
 data ParserState = ParserState
   { currentState :: ParserStatus,
