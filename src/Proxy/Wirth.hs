@@ -110,7 +110,16 @@ recognizeMethod w md =
       0x41
           | guess md == PATCH -> Right MethodData{guess=PATCH, matchingIndex=3}
           | guess md == GET -> Right MethodData{guess=GET, matchingIndex=3}
-
       _ -> Left Error
+    3 -> case w of
+      0x20 | guess md == PUT -> Right MethodData{guess=PUT, matchingIndex=4}
+              | guess md == GET -> Right MethodData{guess=GET, matchingIndex=4}
+      0x41 | guess md == POST -> Right MethodData{guess=POST, matchingIndex=4}
+      0x43 | guess md == PATCH -> Right MethodData{guess=PATCH, matchingIndex=3}
+      _ -> Left Error
+    4 -> case w of
+      0x20 | guess md == POST -> Right MethodData{guess=POST, matchingIndex=5}
+      _ -> Left Error
+      -- don't care about Patch and others for the time being 
     _ -> Left Error
       
