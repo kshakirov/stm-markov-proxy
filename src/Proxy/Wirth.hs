@@ -99,7 +99,15 @@ recognizeMethod w md =
       0x47 -> Right MethodData{guess=GET, matchingIndex=1}
       _ -> Left Error 
     1 -> case w of
-      0x55 -> Right MethodData{guess=PUT, matchingIndex=1}
-      _ -> Left Error 
+      0x55 -> Right MethodData{guess=PUT, matchingIndex=2}
+      0x4f -> Right MethodData{guess=POST, matchingIndex=2}
+      0x41 -> Right MethodData{guess=PATCH, matchingIndex=2}
+      0x45 -> if guess md == GET then Right MethodData{guess=GET, matchingIndex=2} else Left Error
+      _ -> Left Error
+    2 -> case w of
+      0x54 -> Right MethodData{guess=PUT, matchingIndex=3}
+      0x53 -> Right MethodData{guess=POST, matchingIndex=3}
+      0x41 -> Right MethodData{guess=PATCH, matchingIndex=2}
+      _ -> Left Error
     _ -> Left Error
       
