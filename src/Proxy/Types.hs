@@ -21,7 +21,32 @@ data RewriteType
   = RewriteMethod
   |RewriteUrl
   |RewriteHeader
-  
+
+data HttpMethod =PUT
+  |GET
+  |POST
+  |PATCH
+  |HEAD
+  |DELETE
+  |PSTAR
+  deriving (Show, Eq)
+
+data MethodData = MethodData
+  {  guess ::  HttpMethod,
+     matchingIndex :: Int
+  }
+  deriving (Show, Eq)
+
+data UriData = UriData
+  {buffer :: B.ByteString,
+   maxLength :: Int}
+
+data RecognizingData = RecognizingData
+  {method:: MethodData,
+   uriData :: UriData,
+   httpVersion :: Int}
+   
+
 data ParserState = ParserState
   { currentState :: ParserStatus,
     currentIndex :: Int,

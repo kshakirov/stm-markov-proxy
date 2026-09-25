@@ -91,3 +91,15 @@ runWirthStep state w8
 runWirthStep s _ = s
 
 
+recognizeMethod :: Word8 -> MethodData -> Either ParserStatus  MethodData
+recognizeMethod w md =
+  case matchingIndex md of
+    0 -> case w of
+      0x50 ->Right MethodData{guess=PSTAR, matchingIndex=1}
+      0x47 -> Right MethodData{guess=GET, matchingIndex=1}
+      _ -> Left Error 
+    1 -> case w of
+      0x55 -> Right MethodData{guess=PUT, matchingIndex=1}
+      _ -> Left Error 
+    _ -> Left Error
+      
