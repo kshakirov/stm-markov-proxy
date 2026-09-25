@@ -88,7 +88,7 @@ runWirthStep state w8
   | currentState state == Method && currentIndex state < 8 =
       let r = recognizeMethod w8 (method (recognizingData state)) in
         case r of
-          Right m  ->       state {currentState = Method, currentIndex = currentIndex state + 1}
+          Right m  ->       state {currentState = Method, currentIndex = currentIndex state + 1, recognizingData = (recognizingData state){method=m}}
           Left e -> state {currentState = e}
 
 runWirthStep s _ = s
