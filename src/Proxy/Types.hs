@@ -39,7 +39,8 @@ data MethodData = MethodData
 
 data UriData = UriData
   {buffer :: B.ByteString,
-   maxLength :: Int
+   maxLength :: Int,
+   bufferLength::Int
   }  deriving (Show, Eq)
 
 data RecognizingData = RecognizingData

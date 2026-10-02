@@ -14,11 +14,20 @@ request =
 spec :: Spec
 spec = describe "Wirth streaming parser" $ do
   it "gets the method while streaing right" $do
-    let state = runWirth ParserState{currentState=Method, currentIndex=0,parsed=[], recognizingData=RecognizingData{method=MethodData {guess=PSTAR, matchingIndex=0}, uriData=UriData{buffer= "", maxLength=1024},httpVersion=0}} request 
+    let state = runWirth ParserState{currentState=Method, currentIndex=0,parsed=[], recognizingData=RecognizingData{method=MethodData {guess=PSTAR, matchingIndex=0}, uriData=UriData{buffer= "", maxLength=4096, bufferLength=0},httpVersion=0}} request
+    currentState state `shouldBe` Success
     guess (method (recognizingData state))
          `shouldBe` GET
+      
 
-  it "recognizes CRLF CRLF across every chunk boundary" $
+  it "recognizes CRLF CRLF across every chunk boundary" $ do 
+    let state = runWirth ParserState{currentState=Method, currentIndex=0,parsed=[], recognizingData=RecognizingData{method=MethodData {guess=PSTAR, matchingIndex=0}, uriData=UriData{buffer= "", maxLength=4096, bufferLength=0},httpVersion=0}} request 
+    buffer (uriData (recognizingData state))
+         `shouldBe` "/api/v1/users/123"
+    bufferLength (uriData (recognizingData state))
+         `shouldBe` 17
+   
+    
     pendingWith "Add a table-driven split-boundary test"
 
   it "returns an error for malformed request lines" $

@@ -59,10 +59,10 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  Proxy
+    exposed-modules:  Proxy Proxy.Wirth Proxy.Types
 
     -- Modules included in this library but not exported.
-    other-modules: Proxy.Wirth Proxy.Types Proxy.Markov Proxy.Rewrite
+    other-modules: Proxy.Markov Proxy.Rewrite
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

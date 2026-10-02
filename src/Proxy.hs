@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Proxy (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..),
-             ParserState(..), ParserStatus(..), requestRewrite, RewriteType(..),RecognizingData(..),MethodData(..), HttpMethod(..)) where
+             ParserState(..), ParserStatus(..), requestRewrite, RewriteType(..),RecognizingData(..),MethodData(..), HttpMethod(..), UriData(..)) where
 
 import qualified Data.ByteString as B 
 import Data.Word

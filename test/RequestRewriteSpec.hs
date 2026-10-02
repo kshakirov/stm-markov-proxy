@@ -12,13 +12,18 @@ request =
 
 -- Coordinates recorded by the current Wirth parser for the request line.
 -- The parser stores them in reverse discovery order.
+uriState::UriData
+uriState = UriData{buffer="/api/v1/users/123",bufferLength=17,maxLength=2048}
+recognizingState:: RecognizingData
+recognizingState = RecognizingData{uriData=uriState, method = MethodData{guess=GET, matchingIndex=3}}
 finishedState :: ParserState
 finishedState =
   ParserState
     { currentState = Success,
       currentIndex = B.length request - 1,
-      parsed = [22, 21, 4, 3, 0]
-    }
+      parsed = [22, 21, 4, 3, 0],
+      recognizingData = recognizingState }
+    
 
 rules :: [(B.ByteString, B.ByteString)]
 rules = [("v1", "BB")]
@@ -29,7 +34,7 @@ spec = describe "Request URI reconstruction" $ do
     let prefix = requestRewrite RewriteMethod request finishedState rules
         newUri = requestRewrite RewriteUrl request finishedState rules
         suffix = requestRewrite RewriteHeader request finishedState rules
-    B.concat [prefix, newUri, suffix]
+    B.concat [prefix, " ", newUri, suffix]
       `shouldBe`
         "GET /api/BB/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
 

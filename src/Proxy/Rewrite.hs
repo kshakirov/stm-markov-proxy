@@ -11,8 +11,7 @@ import Proxy.Wirth
 extractURI ::  B.ByteString  -> ParserState -> Maybe B.ByteString
 extractURI s parserState = case (currentState parserState) of
   Success -> 
-    let rIndexList = reverse (parsed  parserState)
-    in Just (B.drop ((rIndexList !! 1) + 1)  (B.take (rIndexList !! 3) s))
+    Just  (buffer (uriData (recognizingData parserState)))
   Error  -> Nothing
   _ -> Nothing
 
@@ -46,8 +45,11 @@ requestRewrite RewriteUrl s parserState rules =
       Nothing -> "no uri"
 
 requestRewrite RewriteMethod s pareserState rules = 
-  let rIndexList = reverse (parsed  pareserState)
-  in B.take (rIndexList !! 1) s
+  case   guess (method (recognizingData pareserState)) of
+  GET -> "GET"
+  POST -> "POST"
+  PUT -> "PUT"
+  _ -> ""
 
 
 requestRewrite RewriteHeader s pareserState rules =

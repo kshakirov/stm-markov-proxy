@@ -58,7 +58,7 @@ listenAndServe = do
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
   let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0], recognizingData =RecognizingData{method = MethodData{guess = POST, matchingIndex=0}}}
-  liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
+--  liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
   socket <-  liftIO  $ openListeningSocket name port_num
   forever $ do 
     (conn, addr) <- liftIO $ S.accept socket
@@ -75,7 +75,7 @@ listenAndServe = do
 
 main :: IO ()
 main = do
-  putStrLn "Starting stm-proxy-markov!"
+  --putStrLn "Starting stm-proxy-markov!"
   let initProxyState = ProxyState {nextBackendIndex = 0}
   refProxyTVarState <- newTVarIO initProxyState
   -- for the time bieing hardcoded TODO move to config
@@ -133,23 +133,23 @@ handleClient s requestBuffer ws sb= do
   request <- liftIO $ recv s 1024
   if B.null request then 
     do
-      liftIO $ putStrLn "Closed by the client"
+--      liftIO $ putStrLn "Closed by the client"
       liftIO $ S.close s
   else  do
       let (status, wirthState, acc_requestBuffer) = requestStreamAutomaton requestBuffer request ws 
-      liftIO $putStrLn (show status)
-      liftIO $putStrLn (show $ parsed wirthState)
-      liftIO $putStrLn (show acc_requestBuffer)
+    --  liftIO $putStrLn (show status)
+--      liftIO $putStrLn (show $ parsed wirthState)
+  --    liftIO $putStrLn (show acc_requestBuffer)
 
       
       case status of
         RSA_Finished -> do
-          liftIO $putStrLn "Finished Case"
+  --        liftIO $putStrLn "Finished Case"
           let newPrefix = requestRewrite RewriteMethod acc_requestBuffer wirthState [("v1","BB")]
           let newUri = requestRewrite RewriteUrl acc_requestBuffer wirthState [("v1","BB")]
           let newSuffix = requestRewrite RewriteHeader acc_requestBuffer wirthState [("v1","BB")]
           let newBody = B.concat [newPrefix, newUri, newSuffix]
-          liftIO $print  newUri
+    --      liftIO $print  newUri
           b_socket <-liftIO $ connectBackend (appName currentBackend) (runningPort currentBackend)
           liftIO $ pipeResponse b_socket s newBody
 

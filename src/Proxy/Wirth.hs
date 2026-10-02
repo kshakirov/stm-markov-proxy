@@ -75,7 +75,11 @@ runWirthStep state 0x20
 
 runWirthStep state w8
   | currentState state == URI  =
-      state {currentState = URI, currentIndex = currentIndex state + 1}
+      let ud = uriData (recognizingData  state) in
+        let b = buffer ud  <> B.singleton w8 in 
+        let bl = bufferLength ud  + 1  in
+        let new_ud = ud {buffer =b, bufferLength=bl} in 
+        state {currentState = URI, currentIndex = currentIndex state + 1, recognizingData=  (recognizingData state){uriData=  new_ud}}
 
 runWirthStep state 0x20
   | currentState state == Method && currentIndex state < 8 =
@@ -111,11 +115,12 @@ recognizeMethod w md =
       0x45 | guess md == GET -> Right MethodData{guess=GET, matchingIndex=2}
       _ -> Left Error
     2 -> case w of
-      0x54 | guess md == PUT -> Right MethodData{guess=PUT, matchingIndex=3} 
+      0x54 | guess md == PUT -> Right MethodData{guess=PUT, matchingIndex=3}
+              | guess md == GET -> Right MethodData{guess=GET, matchingIndex=3}
       0x53 | guess md == POST -> Right MethodData{guess=POST, matchingIndex=3}
       0x41
           | guess md == PATCH -> Right MethodData{guess=PATCH, matchingIndex=3}
-          | guess md == GET -> Right MethodData{guess=GET, matchingIndex=3}
+
       _ -> Left Error
     3 -> case w of
       0x20 | guess md == PUT -> Right MethodData{guess=PUT, matchingIndex=4}
