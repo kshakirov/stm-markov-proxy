@@ -16,7 +16,8 @@ import Control.Monad (forever)
 import Control.Concurrent (forkIO)
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString as B
-import Proxy (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite, RewriteType(..), RecognizingData(..),MethodData(..), HttpMethod(..))
+import Proxy (runMarkov, requestStreamAutomaton, RequestStreamAutomatonStatus(..), ParserState(..),ParserStatus(..), requestRewrite, RewriteType(..),
+              RecognizingData(..),MethodData(..), HttpMethod(..),UriData(..))
 
 data Env = Env
   { proxyConfig :: Config,
@@ -57,7 +58,9 @@ listenAndServe = do
   let requestBuffer = ""
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
-  let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0], recognizingData =RecognizingData{method = MethodData{guess = POST, matchingIndex=0}}}
+  let uriState = UriData{buffer="",bufferLength=0,maxLength=2048}
+  let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0],
+                                     recognizingData =RecognizingData{uriData=uriState, method = MethodData{guess = PSTAR, matchingIndex=0},httpVersion=0}}
 --  liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
   socket <-  liftIO  $ openListeningSocket name port_num
   forever $ do 
@@ -148,7 +151,7 @@ handleClient s requestBuffer ws sb= do
           let newPrefix = requestRewrite RewriteMethod acc_requestBuffer wirthState [("v1","BB")]
           let newUri = requestRewrite RewriteUrl acc_requestBuffer wirthState [("v1","BB")]
           let newSuffix = requestRewrite RewriteHeader acc_requestBuffer wirthState [("v1","BB")]
-          let newBody = B.concat [newPrefix, newUri, newSuffix]
+          let newBody = B.concat [newPrefix, " " , newUri, newSuffix]
     --      liftIO $print  newUri
           b_socket <-liftIO $ connectBackend (appName currentBackend) (runningPort currentBackend)
           liftIO $ pipeResponse b_socket s newBody
