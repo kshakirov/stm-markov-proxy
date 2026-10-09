@@ -17,12 +17,12 @@ extractURI  parserState = case currentState parserState of
 
 
 
-extractAll:: B.ByteString -> ParserState -> Maybe [Int]
-extractAll s parserState = case (currentState parserState) of
-  Success ->
-    let rIndexList = reverse (parsed parserState)
-    in Just rIndexList
-  _ -> Nothing
+-- extractAll:: B.ByteString -> ParserState -> Maybe [Int]
+-- extractAll s parserState = case (currentState parserState) of
+--   Success ->
+--     let rIndexList = reverse (parsed parserState)
+--     in Just rIndexList
+--   _ -> Nothing
 
 
 requestStreamAutomaton :: B.ByteString -> B.ByteString -> ParserState->  (RequestStreamAutomatonStatus , ParserState, B.ByteString)

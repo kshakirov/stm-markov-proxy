@@ -22,17 +22,17 @@ runWirthStep :: ParserState -> Word8 -> ParserState
 
 runWirthStep state 0x0A
   | currentState state == ExpectFinalCLRF =
-      state {currentState =Success  , currentIndex = currentIndex state , parsed =  parsed state}
+      state {currentState =Success  , currentIndex = currentIndex state }
 
 
 runWirthStep state 0x0D
   | currentState state == HeaderName =
-      state {currentState = ExpectFinalCLRF, currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
+      state {currentState = ExpectFinalCLRF, currentIndex = currentIndex state + 1}
 
 
 runWirthStep state 0x0D 
   | currentState state == HeaderValue =
-      state {currentState = ExpectCLRF, currentIndex = currentIndex state + 1, parsed = currentIndex state  : parsed state}
+      state {currentState = ExpectCLRF, currentIndex = currentIndex state + 1}
 
 runWirthStep state w8
   | currentState state == HeaderValue  =
@@ -42,7 +42,7 @@ runWirthStep state w8
 
 runWirthStep state 0x3A
   | currentState state == HeaderName =
-      state {currentState = HeaderValue, parsed = currentIndex state + 1 : (currentIndex state  : parsed state), currentIndex = currentIndex state + 1}
+      state {currentState = HeaderValue, currentIndex = currentIndex state + 1}
 
 runWirthStep state 0x0D
   | currentState state == HeaderName  =
@@ -57,12 +57,12 @@ runWirthStep state w8
 
 runWirthStep state 0x0A
   | currentState state == ExpectCLRF =
-      state {currentState = HeaderName , currentIndex = currentIndex state + 1, parsed = currentIndex state + 1 : parsed state}
+      state {currentState = HeaderName , currentIndex = currentIndex state + 1}
 
 
 runWirthStep state 0x0D
   | currentState state == Version =
-      state {currentState = ExpectCLRF,  parsed = currentIndex state  : parsed state, currentIndex = currentIndex state + 1}
+      state {currentState = ExpectCLRF,   currentIndex = currentIndex state + 1}
 
 runWirthStep state w8
   | currentState state == Version =
@@ -71,7 +71,7 @@ runWirthStep state w8
 
 runWirthStep state 0x20
   | currentState state == URI =
-      state {currentState = Version,  parsed = currentIndex state + 1 : (currentIndex state  : parsed state), currentIndex = currentIndex state + 1}
+      state {currentState = Version,   currentIndex = currentIndex state + 1}
 
 runWirthStep state w8
   | currentState state == URI  =
@@ -85,12 +85,12 @@ runWirthStep state 0x20
   | currentState state == Method && currentIndex state < 8 =
       let r = recognizeMethod 0x20 (method (recognizingData state)) in
         case r of
-          Right m  ->   state {currentState = URI, parsed =currentIndex  state + 1 : ( currentIndex state   : parsed state), currentIndex = currentIndex state + 1, recognizingData = (recognizingData state){method=m}}
+          Right m  ->   state {currentState = URI, currentIndex = currentIndex state + 1, recognizingData = (recognizingData state){method=m}}
           Left e -> state {currentState = e}
 
 runWirthStep state w8
   | currentState state == Method && currentIndex state > 8 =
-      state {currentState = Error, currentIndex = currentIndex state, parsed = parsed state}
+      state {currentState = Error, currentIndex = currentIndex state}
 runWirthStep state w8
   | currentState state == Method && currentIndex state < 8 =
       let r = recognizeMethod w8 (method (recognizingData state)) in

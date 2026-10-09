@@ -59,7 +59,7 @@ listenAndServe = do
   let ends =( backends  . proxyConfig)env
   let tVarState = proxyTVarState env
   let uriState = UriData{buffer="",bufferLength=0,maxLength=2048}
-  let wirthParserState = ParserState{currentState = Method, currentIndex =0, parsed =[0],
+  let wirthParserState = ParserState{currentState = Method, currentIndex =0, 
                                      recognizingData =RecognizingData{uriData=uriState, method = MethodData{guess = PSTAR, matchingIndex=0},httpVersion=0}}
 --  liftIO $ putStrLn $ "The host is " ++ name ++ "port is " ++ (show port_num)
   socket <-  liftIO  $ openListeningSocket name port_num

@@ -21,7 +21,6 @@ finishedState =
   ParserState
     { currentState = Success,
       currentIndex = B.length request - 1,
-      parsed = [22, 21, 4, 3, 0],
       recognizingData = recognizingState }
     
 
