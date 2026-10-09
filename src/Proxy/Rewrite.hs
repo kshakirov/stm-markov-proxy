@@ -8,8 +8,8 @@ import Proxy.Markov
 import Proxy.Wirth
 
 
-extractURI ::  B.ByteString  -> ParserState -> Maybe B.ByteString
-extractURI s parserState = case (currentState parserState) of
+extractURI ::   ParserState -> Maybe B.ByteString
+extractURI  parserState = case currentState parserState of
   Success -> 
     Just  (buffer (uriData (recognizingData parserState)))
   Error  -> Nothing
@@ -37,14 +37,14 @@ requestStreamAutomaton body fragment  ws_in =
       
       
     
-requestRewrite :: RewriteType ->   B.ByteString -> ParserState -> [(B.ByteString, B.ByteString)] -> B.ByteString
-requestRewrite RewriteUrl s parserState rules =
-  let ms = extractURI s parserState in 
+requestRewrite :: RewriteType ->    ParserState -> [(B.ByteString, B.ByteString)] -> B.ByteString
+requestRewrite RewriteUrl  parserState rules =
+  let ms = extractURI parserState in 
     case ms of
       Just uri -> runMarkov rules uri
       Nothing -> "no uri"
 
-requestRewrite RewriteMethod s pareserState rules = 
+requestRewrite RewriteMethod  pareserState rules = 
   case   guess (method (recognizingData pareserState)) of
   GET -> "GET"
   POST -> "POST"
@@ -52,16 +52,7 @@ requestRewrite RewriteMethod s pareserState rules =
   _ -> ""
 
 
-requestRewrite RewriteHeader s pareserState rules =
-  let rIndexList = reverse (parsed  pareserState)
-  in B.drop (rIndexList !! 3)   s
+requestRewrite RewriteHeader  pareserState rules =
+  " Via: 1.1 stm-markov-proxy\r\n\r\n"
 
-testRequestRewrite =
-  let state =  ParserState{currentState = Method, currentIndex =0, parsed =[0]} 
-      req = "GET /api/v2/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\nn\r\n"
-      newState = runWirth state req
-      rules  = [("v2","BB")]
-  in requestRewrite RewriteUrl
-
- req newState rules 
 

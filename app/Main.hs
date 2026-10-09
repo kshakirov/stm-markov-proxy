@@ -82,7 +82,7 @@ main = do
   let initProxyState = ProxyState {nextBackendIndex = 0}
   refProxyTVarState <- newTVarIO initProxyState
   -- for the time bieing hardcoded TODO move to config
-  let bs =[ BackendConfig{appName="127.0.0.1", runningPort=8081}]
+  let bs =[ BackendConfig{appName="127.0.0.1", runningPort=18081}]
   let c = Config {hostName = "127.0.0.1", port = 8989, backends=length bs}
 
   let e = Env {proxyConfig = c, backendConfigs = bs, proxyTVarState = refProxyTVarState}
@@ -148,9 +148,9 @@ handleClient s requestBuffer ws sb= do
       case status of
         RSA_Finished -> do
   --        liftIO $putStrLn "Finished Case"
-          let newPrefix = requestRewrite RewriteMethod acc_requestBuffer wirthState [("v1","BB")]
-          let newUri = requestRewrite RewriteUrl acc_requestBuffer wirthState [("v1","BB")]
-          let newSuffix = requestRewrite RewriteHeader acc_requestBuffer wirthState [("v1","BB")]
+          let newPrefix = requestRewrite RewriteMethod  wirthState [("v1","BB")]
+          let newUri = requestRewrite RewriteUrl  wirthState [("v1","BB")]
+          let newSuffix = requestRewrite RewriteHeader  wirthState [("v1","BB")]
           let newBody = B.concat [newPrefix, " " , newUri, newSuffix]
     --      liftIO $print  newUri
           b_socket <-liftIO $ connectBackend (appName currentBackend) (runningPort currentBackend)

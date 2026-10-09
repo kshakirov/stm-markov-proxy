@@ -31,13 +31,13 @@ rules = [("v1", "BB")]
 spec :: Spec
 spec = describe "Request URI reconstruction" $ do
   it "reconstructs the complete request around a rewritten URI" $ do
-    let prefix = requestRewrite RewriteMethod request finishedState rules
-        newUri = requestRewrite RewriteUrl request finishedState rules
-        suffix = requestRewrite RewriteHeader request finishedState rules
+    let prefix = requestRewrite RewriteMethod  finishedState rules
+        newUri = requestRewrite RewriteUrl finishedState rules
+        suffix = requestRewrite RewriteHeader  finishedState rules
     B.concat [prefix, " ", newUri, suffix]
       `shouldBe`
-        "GET /api/BB/users/123 HTTP/1.1\r\nHost: example.com\r\nAccept: application/json\r\n\r\n"
+        "GET /api/BB/users/123 Via: 1.1 stm-markov-proxy\r\n\r\n"
 
   it "returns the URI without its separating spaces" $ do
-    requestRewrite RewriteUrl request finishedState rules
+    requestRewrite RewriteUrl  finishedState rules
       `shouldBe` "/api/BB/users/123"
