@@ -59,7 +59,11 @@ library
     import:           warnings
 
     -- Modules exported by the library.
-    exposed-modules:  Proxy Proxy.Wirth Proxy.Types
+    exposed-modules:  Proxy
+                      Proxy.Wirth
+                      Proxy.Types
+                      Proxy.Transport.TcpInput
+                      Proxy.Transport.UnixSocketOutput
 
     -- Modules included in this library but not exported.
     other-modules: Proxy.Markov Proxy.Rewrite
@@ -106,6 +110,24 @@ executable stm-markov-proxy
                   stm >= 2.5.1.0,
                   transformers >= 0.6.1.0
 
+    -- Directories containing source files.
+    hs-source-dirs:   app
+
+    -- Base language which the package is written in.
+    default-language: Haskell2010
+
+
+executable chaindb-proxy
+    import:           warnings
+    main-is:          ChainDbMain.hs
+    hs-source-dirs:   app
+    default-language: Haskell2010
+
+    build-depends:
+        base ^>=4.18.3.0,
+        bytestring >= 0.11.5.4,
+        network >= 3.2.7.0,
+        stm-markov-proxy 
     -- Directories containing source files.
     hs-source-dirs:   app
 
