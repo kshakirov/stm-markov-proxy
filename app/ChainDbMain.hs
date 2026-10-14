@@ -11,16 +11,17 @@ main::IO ()
 
 
 handleConnection :: Socket -> Socket -> IO ()
-handleConnection tcp_conn  file_sock= do
+handleConnection tcp_conn  unix_conn= do
   req <- recv tcp_conn 1024
-  sendUnixChunk file_sock req
-  putStrLn ""
+  sendUnixChunk unix_conn req
+  putStrLn "finished"
 
 
 main = do
   sock <- openTcpListener "127.0.0.1" 9300
-  conn <-acceptTcpConnection sock
-  f_sock <- connectUnixSocket "" 
+  tcp_conn <-acceptTcpConnection sock
+  f_sock <- connectUnixSocket "/tmp/chaindb-proxy-test.sock"
+  handleConnection tcp_conn f_sock
   putStrLn ""
 
 

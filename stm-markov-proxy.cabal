@@ -127,12 +127,7 @@ executable chaindb-proxy
         base ^>=4.18.3.0,
         bytestring >= 0.11.5.4,
         network >= 3.2.7.0,
-        stm-markov-proxy 
-    -- Directories containing source files.
-    hs-source-dirs:   app
-
-    -- Base language which the package is written in.
-    default-language: Haskell2010
+        stm-markov-proxy
 
 test-suite stm-markov-proxy-test
     -- Import common warning flags.
