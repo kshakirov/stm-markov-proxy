@@ -4,7 +4,7 @@ state: OPEN
 state_reason: 
 author: kshakirov
 created_at: 2026-10-09T05:31:04Z
-updated_at: 2026-10-14T16:48:26Z
+updated_at: 2026-10-14T18:09:55Z
 closed_at: 
 url: https://github.com/kshakirov/stm-markov-proxy/issues/10
 labels: []
@@ -119,4 +119,24 @@ Refal is a later semantic-specialization stage. This issue establishes the mecha
 
 - **Build-time metamachine**: the Rake/ERB layer that selects known components and emits a concrete Haskell build before runtime.
 - **ChainDb proxy**: the first specialized raw-stream machine composed as `TCP Input → Unix Socket Output`.
+
+## Comments
+
+### kshakirov — 2026-10-14T18:09:54Z
+
+Сегодня я собрал и проверил первый физический шов специализированного proxy:
+
+```text
+TCP client
+→ TcpInput
+→ ChainDbMain
+→ UnixSocketOutput
+→ console Unix-socket listener
+```
+
+Добавлены два независимых Haskell-кирпича: `Proxy.Transport.TcpInput` и `Proxy.Transport.UnixSocketOutput`. Конкретная машина возникает только в отдельном `ChainDbMain`; HTTP, Wirth и Markov в этот тракт не входят.
+
+Первый живой эксперимент прошёл: proxy принял TCP-соединение на `127.0.0.1:9300`, подключился к `/tmp/chaindb-proxy-test.sock` и передал тестовый chunk в консольный Unix-socket listener. Пока доказан ровно однократный проход до 1024 байт — без заявлений о полном streaming lifecycle.
+
+Главный результат для меня — не сам `recv → sendAll`, а появление настоящих заменяемых кирпичей. Следующий шаг: довести односторонний поток до TCP EOF и проверить payload больше одного chunk. После ручного эталона Rake/ERB механически соберёт эту композицию, а Refal станет следующим, уже семантическим проходом специализации.
 
