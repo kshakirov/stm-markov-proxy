@@ -7,6 +7,11 @@ COMPONENTS = {
     function_name: "tcpInput",
     package: "stm-markov-proxy"
   },
+  "NamedPipeOutput" => {
+    module_name: "Proxy.Transport.NamedPipeOutput",
+    function_name: "namedPipeOutput",
+    package: "stm-markov-proxy"
+  },
   "UnixSocketOutput" => {
     module_name: "Proxy.Transport.UnixSocketOutput",
     function_name: "unixSocketOutput",
@@ -14,21 +19,34 @@ COMPONENTS = {
   }
 }.freeze
 
-PROXY = {
-  name: "raw-tcp-proxy",
-  package_name: "raw-tcp-proxy-generated",
-  composition: :kleisli,
-  input: {
-    component: "TcpInput",
-    args: ["127.0.0.1", 9300]
+PROXIES = {
+  raw_tcp_proxy: {
+    name: "raw-tcp-proxy",
+    package_name: "raw-tcp-proxy-generated",
+    composition: :kleisli,
+    input: {
+      component: "TcpInput",
+      args: ["127.0.0.1", 9300]
+    },
+    output: {
+      component: "UnixSocketOutput",
+      args: ["/tmp/chaindb-proxy-test.sock"]
+    }
   },
-  output: {
-    component: "UnixSocketOutput",
-    args: ["/tmp/chaindb-proxy-test.sock"]
+  raw_tcp_pipe_proxy: {
+    name: "raw-tcp-pipe-proxy",
+    package_name: "raw-tcp-pipe-proxy-generated",
+    composition: :kleisli,
+    input: {
+      component: "TcpInput",
+      args: ["127.0.0.1", 9300]
+    },
+    output: {
+      component: "NamedPipeOutput",
+      args: ["/tmp/chaindb-proxy-test.pipe"]
+    }
   }
 }.freeze
-
-GENERATED_DIRECTORY = "generated/raw-tcp-proxy".freeze
 
 def haskell_literal(value)
   case value
@@ -53,48 +71,56 @@ def render(template_path, output_path, values)
   File.write(output_path, template.result_with_hash(values))
 end
 
-namespace :raw_tcp_proxy do
-  desc "Generate the raw TCP to Unix-socket proxy"
-  task :generate do
-    input = COMPONENTS.fetch(PROXY.fetch(:input).fetch(:component))
-    output = COMPONENTS.fetch(PROXY.fetch(:output).fetch(:component))
+def generate_proxy(proxy, generated_directory)
+  input = COMPONENTS.fetch(proxy.fetch(:input).fetch(:component))
+  output = COMPONENTS.fetch(proxy.fetch(:output).fetch(:component))
 
-    values = PROXY.merge(
-      imports: [input, output],
-      input_call: component_call(input, PROXY.fetch(:input).fetch(:args)),
-      output_call: component_call(output, PROXY.fetch(:output).fetch(:args)),
-      dependencies: ["base ^>=4.18.3.0", input.fetch(:package), output.fetch(:package)].uniq
-    )
+  values = proxy.merge(
+    imports: [input, output],
+    input_call: component_call(input, proxy.fetch(:input).fetch(:args)),
+    output_call: component_call(output, proxy.fetch(:output).fetch(:args)),
+    dependencies: ["base ^>=4.18.3.0", input.fetch(:package), output.fetch(:package)].uniq
+  )
 
-    render(
-      "templates/raw-tcp-proxy/Main.hs.erb",
-      "#{GENERATED_DIRECTORY}/app/Main.hs",
-      values
-    )
-    render(
-      "templates/raw-tcp-proxy/package.cabal.erb",
-      "#{GENERATED_DIRECTORY}/#{PROXY.fetch(:package_name)}.cabal",
-      values
-    )
+  render(
+    "templates/raw-tcp-proxy/Main.hs.erb",
+    "#{generated_directory}/app/Main.hs",
+    values
+  )
+  render(
+    "templates/raw-tcp-proxy/package.cabal.erb",
+    "#{generated_directory}/#{proxy.fetch(:package_name)}.cabal",
+    values
+  )
 
-    File.write(
-      "#{GENERATED_DIRECTORY}/cabal.project",
-      "packages:\n  .\n  #{GENERATED_DIRECTORY}\n"
-    )
+  File.write(
+    "#{generated_directory}/cabal.project",
+    "packages:\n  .\n  #{generated_directory}\n"
+  )
 
-    puts "Generated #{PROXY.fetch(:name)} with #{PROXY.fetch(:composition)} composition"
-  end
-
-  desc "Build the generated raw TCP proxy"
-  task build: :generate do
-    sh(
-      "cabal",
-      "build",
-      "--project-file=#{GENERATED_DIRECTORY}/cabal.project",
-      "#{PROXY.fetch(:package_name)}:exe:#{PROXY.fetch(:name)}"
-    )
-  end
+  puts "Generated #{proxy.fetch(:name)} with #{proxy.fetch(:composition)} composition"
 end
 
-desc "Generate and build the specialized raw TCP proxy"
-task raw_tcp_proxy: "raw_tcp_proxy:build"
+PROXIES.each do |task_name, proxy|
+  generated_directory = "generated/#{proxy.fetch(:name)}"
+
+  namespace task_name do
+    desc "Generate #{proxy.fetch(:name)}"
+    task :generate do
+      generate_proxy(proxy, generated_directory)
+    end
+
+    desc "Build #{proxy.fetch(:name)}"
+    task build: :generate do
+      sh(
+        "cabal",
+        "build",
+        "--project-file=#{generated_directory}/cabal.project",
+        "#{proxy.fetch(:package_name)}:exe:#{proxy.fetch(:name)}"
+      )
+    end
+  end
+
+  desc "Generate and build #{proxy.fetch(:name)}"
+  task task_name => "#{task_name}:build"
+end

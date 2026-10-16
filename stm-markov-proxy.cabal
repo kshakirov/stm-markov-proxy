@@ -62,6 +62,7 @@ library
     exposed-modules:  Proxy
                       Proxy.Wirth
                       Proxy.Types
+                      Proxy.Transport.NamedPipeOutput
                       Proxy.Transport.TcpInput
                       Proxy.Transport.UnixSocketOutput
 
