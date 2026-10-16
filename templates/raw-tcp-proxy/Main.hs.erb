@@ -1,0 +1,12 @@
+module Main where
+
+import Control.Monad ((>=>))
+<% imports.each do |component| -%>
+import <%= component.fetch(:module_name) %> (<%= component.fetch(:function_name) %>)
+<% end -%>
+
+main :: IO ()
+main =
+  ( (\() -> <%= input_call %>)
+    >=> <%= output_call %>
+  ) ()

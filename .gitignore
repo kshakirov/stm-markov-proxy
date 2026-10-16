@@ -5,6 +5,9 @@
 # Cabal build output
 dist-newstyle/
 
+# Rake/ERB generated proxy packages
+/generated/
+
 # Editor backup files
 *~
 
