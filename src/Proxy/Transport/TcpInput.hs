@@ -1,11 +1,14 @@
 module Proxy.Transport.TcpInput
   ( openTcpListener
   , acceptTcpConnection
+  ,tcpInput
   ) where
 
 import Control.Exception (onException)
 import Network.Socket (Socket)
 import qualified Network.Socket as S
+import Network.Socket.ByteString (recv)
+import qualified Data.ByteString as B
 
 openTcpListener :: String -> Int -> IO Socket
 openTcpListener hostName portNumber = do
@@ -22,6 +25,17 @@ openTcpListener hostName portNumber = do
         S.listen listener 1024
         pure listener
   openListener `onException` S.close listener
+
+
+tcpInput :: String -> Int -> IO B.ByteString
+tcpInput hostName port   = do 
+  sock <- openTcpListener  hostName port
+  conn <- acceptTcpConnection sock
+  recv conn 1024
+  
+
+
+
 
 acceptTcpConnection :: Socket -> IO Socket
 acceptTcpConnection listener = fst <$> S.accept listener
