@@ -130,6 +130,16 @@ executable chaindb-proxy
         network >= 3.2.7.0,
         stm-markov-proxy
 
+executable proxy-lab
+    import:           warnings
+    main-is:          ProxyLabMain.hs
+    hs-source-dirs:   app
+    default-language: Haskell2010
+
+    build-depends:
+        base ^>=4.18.3.0,
+        stm-markov-proxy
+
 test-suite stm-markov-proxy-test
     -- Import common warning flags.
     import:           warnings
