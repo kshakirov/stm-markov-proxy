@@ -51,7 +51,10 @@ tcpInput hostName port   = do
 tcpRead :: TcpState -> IO (Either B.ByteString TcpState)
 tcpRead state = do
   chunk <- recv (socket state) 1023
-  return (Right state {payload = chunk})
+  if (B.length chunk)  > 0 
+    then return ( Right state)
+    else return (Left "all read")
+
 
 
 acceptTcpConnection :: Socket -> IO Socket
