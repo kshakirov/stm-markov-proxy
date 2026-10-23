@@ -4,7 +4,8 @@ module Proxy.Transport.TcpInput
   , acceptTcpConnection
   ,tcpInput,
    openResource,
-   tcpRead
+   tcpRead,
+   TcpState(..)
   ) where
 
 import Control.Exception (onException)
