@@ -5,7 +5,8 @@ module Proxy.Transport.TcpInput
   ,tcpInput,
    openResource,
    tcpRead,
-   TcpState(..)
+   TcpState(..),
+   closeResource
   ) where
 
 import Control.Exception (onException)
@@ -33,6 +34,7 @@ openTcpListener hostName portNumber = do
 
 data TcpState = TcpState{
   socket :: Socket,
+  listeningSocket :: Socket,
   payload :: B.ByteString
   }
 
@@ -40,7 +42,7 @@ openResource::String -> Int -> IO TcpState
 openResource hostName port = do
   sock <- openTcpListener  hostName port
   conn <-acceptTcpConnection sock
-  return TcpState{socket = conn, payload=""}
+  return TcpState{socket = conn, payload="", listeningSocket=sock}
 
 tcpInput :: String -> Int -> IO B.ByteString
 tcpInput hostName port   = do 
@@ -53,9 +55,14 @@ tcpRead :: TcpState -> IO (Either B.ByteString TcpState)
 tcpRead state = do
   chunk <- recv (socket state) 1023
   if (B.length chunk)  > 0 
-    then return ( Right state)
+    then return ( Right state {payload=chunk})
     else return (Left "all read")
 
+closeResource::TcpState -> IO ()
+closeResource state =do
+  S.close (socket state)
+  S.close (listeningSocket state)
+  
 
 
 acceptTcpConnection :: Socket -> IO Socket

@@ -1,7 +1,7 @@
 module Main where
 
 
-import Proxy.Transport.TcpInput(openResource,tcpRead)
+import Proxy.Transport.TcpInput(openResource,tcpRead,closeResource)
 import Proxy.Transport.NamedPipeOutput(namedPipeWrite)
 import Control.Monad
 
@@ -25,5 +25,6 @@ iter step state = do
 main :: IO ()
 main = do 
   state <- openResource "" 9000
-  iter (compose tcpRead  namedPipeWrite ) state 
+  iter (compose tcpRead  namedPipeWrite ) state
+  closeResource state
   putStrLn "Hello, world!"
