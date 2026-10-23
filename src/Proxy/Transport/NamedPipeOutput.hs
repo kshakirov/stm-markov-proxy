@@ -12,5 +12,5 @@ namedPipeOutput = B.writeFile
 
 namedPipeWrite :: TcpState -> IO (Either B.ByteString TcpState)
 namedPipeWrite state =do 
-  B.writeFile  "" (payload state)
+  B.writeFile  "/Users/kiryloshakirov/Documents/repos/scheme_coding/my_test_pipe" (payload state)
   return (Right  state)
