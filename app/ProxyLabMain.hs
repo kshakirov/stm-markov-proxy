@@ -1,10 +1,11 @@
 module Main where
 
 
-import Proxy.Transport.TcpInput(openResource,tcpRead,closeResource)
+import Proxy.Transport.TcpInput(openResource,tcpRead,closeResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState)
 import Proxy.Transport.NamedPipeOutput(namedPipeWrite)
 import Control.Monad
 import Control.Exception
+import Control.Concurrent
 
 compose f g state = do
   result <- f state
@@ -19,10 +20,28 @@ iter step state = do
   case result of
     Right r -> iter step r 
     Left l -> pure  l
-    
 
+
+
+forkWrapper :: s -> (s -> IO (Either l s))-> IO (Either  l s)
+forkWrapper state step  = do
+  forkIO (void (iter step state))
+  return (Right state)
+  
+
+
+
+
+
+  
+  
 
 main :: IO ()
 main = do
-  bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
+  -- bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
+  
+  state <- openResourceOnly "" 9000
+  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s (compose tcpRead  namedPipeWrite ))) state
+  closeResource state 
+
   putStrLn "Hello, world!"
