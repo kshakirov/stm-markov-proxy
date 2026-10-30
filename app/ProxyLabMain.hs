@@ -1,7 +1,8 @@
 module Main where
 
 
-import Proxy.Transport.TcpInput(openResource,tcpRead,closeClientResource, closeListeningResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState)
+import Proxy.Transport.TcpInput(openResource,tcpRead,closeClientResource, closeListeningResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState, openResourceExtra)
+import Proxy.Transport.UnixSocketOutput (connectUnixSocket, unixSocekWrite)
 import Proxy.Transport.NamedPipeOutput(namedPipeWrite)
 import Control.Monad
 import Control.Exception
@@ -42,8 +43,8 @@ main :: IO ()
 main = do
   -- bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
   
-  state <- openResourceOnly "" 9000
-  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s (compose tcpRead  namedPipeWrite ) closeClientResource)) state
+  state <- openResourceExtra "" 9000 connectUnixSocket  ""
+  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s (compose tcpRead  unixSocekWrite) closeClientResource)) state
   closeListeningResource state 
 
   putStrLn "Hello, world!"

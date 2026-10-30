@@ -1,7 +1,9 @@
 module Proxy.Transport.UnixSocketOutput
   ( connectUnixSocket
   , sendUnixChunk
-  ,unixSocketOutput
+  ,unixSocketOutput,
+
+   unixSocekWrite
   ) where
 
 import Control.Exception (onException)
@@ -9,6 +11,13 @@ import qualified Data.ByteString as B
 import Network.Socket (Socket)
 import qualified Network.Socket as S
 import qualified Network.Socket.ByteString as SB
+import Proxy.Transport.TcpInput (TcpState(..))
+
+
+
+
+
+
 
 connectUnixSocket :: FilePath -> IO Socket
 connectUnixSocket socketPath = do
@@ -19,6 +28,12 @@ connectUnixSocket socketPath = do
 sendUnixChunk :: Socket -> B.ByteString -> IO ()
 sendUnixChunk = SB.sendAll
 
+
+unixSocekWrite:: TcpState -> IO (Either B.ByteString TcpState)
+unixSocekWrite state  = do
+  SB.sendAll (unixSocket state) (payload state)
+  return (Right state )
+  
 
 unixSocketOutput :: FilePath -> B.ByteString -> IO()
 unixSocketOutput filePath chunk = do

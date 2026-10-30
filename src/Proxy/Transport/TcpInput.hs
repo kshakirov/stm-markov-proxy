@@ -9,6 +9,7 @@ module Proxy.Transport.TcpInput
    closeClientResource,
    closeListeningResource,
    openResourceOnly,
+   openResourceExtra,
    acceptForeachAndIter
   ) where
 
@@ -38,6 +39,7 @@ openTcpListener hostName portNumber = do
 data TcpState = TcpState{
   socket :: Socket,
   listeningSocket :: Socket,
+  unixSocket::Socket,
   payload :: B.ByteString
   }
 
@@ -46,6 +48,12 @@ openResourceOnly::String -> Int -> IO TcpState
 openResourceOnly hostName port = do
   sock <- openTcpListener  hostName port
   return TcpState{socket = undefined, payload="", listeningSocket=sock}
+
+openResourceExtra::String -> Int ->(FilePath -> IO Socket)-> FilePath ->  IO TcpState
+openResourceExtra hostName port openAnotherSocekt  filePath= do
+  sock <- openTcpListener  hostName port 
+  anotherSock <- openAnotherSocekt filePath
+  return TcpState{socket = undefined, payload="", listeningSocket=sock, unixSocket = anotherSock}
 
 
 
