@@ -47,7 +47,7 @@ main :: IO ()
 main = do
   -- bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
         
-  state <- openResource "" 9000 
+  state <- openResourceOnly "" 9000 
   iter  ( compose acceptForeachAndIter (\s -> forkWrapper s stateTrans (compose tcpRead  unixSocekWrite) closeClientResource)) state
   closeListeningResource state 
 

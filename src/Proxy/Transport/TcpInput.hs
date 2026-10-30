@@ -16,7 +16,7 @@ module Proxy.Transport.TcpInput
 import Control.Exception (onException)
 import Network.Socket (Socket)
 import qualified Network.Socket as S
-import Network.Socket.ByteString (recv)
+import Network.Socket.ByteString (recv,sendAll)
 import qualified Data.ByteString as B
 
 openTcpListener :: String -> Int -> IO Socket
@@ -69,7 +69,15 @@ tcpInput hostName port   = do
   sock <- openTcpListener  hostName port
   conn <- acceptTcpConnection sock
   recv conn 1024
-  
+
+
+tcpWrite :: TcpState -> IO (Either B.ByteString TcpState)
+tcpWrite state = do
+   sendAll (socket state) (payload state)
+   return ( Right state)
+   
+
+
 
 tcpRead :: TcpState -> IO (Either B.ByteString TcpState)
 tcpRead state = do

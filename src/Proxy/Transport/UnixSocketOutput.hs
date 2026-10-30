@@ -1,8 +1,9 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Proxy.Transport.UnixSocketOutput
   ( connectUnixSocket
   , sendUnixChunk
   ,unixSocketOutput,
-
+unixSocketRead,
    unixSocekWrite
   ) where
 
@@ -39,3 +40,10 @@ unixSocketOutput :: FilePath -> B.ByteString -> IO()
 unixSocketOutput filePath chunk = do
   f_sock <- connectUnixSocket filePath
   sendUnixChunk f_sock chunk
+
+unixSocketRead :: TcpState -> IO (Either B.ByteString TcpState)
+unixSocketRead state = do
+  chunk <- SB.recv (unixSocket state) 1023
+  if (B.length chunk)  > 0 
+    then return ( Right state {payload=chunk})
+    else return (Left "all read")
