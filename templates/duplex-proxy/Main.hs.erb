@@ -1,0 +1,49 @@
+module Main where
+
+import Control.Concurrent (forkIO)
+import Control.Concurrent.Async (link, withAsync)
+import Control.Monad (void)
+import Proxy.Transport.TcpInput
+  ( TcpState(..), openResourceOnly, acceptForeachAndIter
+  , tcpRead, tcpWrite, closeClientResource
+  )
+import Proxy.Transport.UnixSocketOutput
+  ( connectUnixSocket, unixSocekWrite, unixSocketRead )
+
+compose f g state = do
+  result <- f state
+  case result of
+    Left done -> pure (Left done)
+    Right next -> g next
+
+iter :: (s -> IO (Either r s)) -> s -> IO r
+iter step state = do
+  result <- step state
+  case result of
+    Left done -> pure done
+    Right next -> iter step next
+
+forkWrapper state prepare step1 step2 close = do
+  _ <- forkIO $ do
+    ready <- prepare state
+    withAsync (void (iter step1 ready)) $ \task -> do
+      link task
+      void (iter step2 ready)
+    close ready
+  pure (Right state)
+
+prepare :: TcpState -> IO TcpState
+prepare state = do
+  output <- connectUnixSocket <%= socket_path_literal %>
+  pure (state {unixSocket = output})
+
+main :: IO ()
+main = do
+  listenerState <- openResourceOnly <%= host_literal %> <%= port %>
+  void $ iter
+    (compose acceptForeachAndIter
+      (\state -> forkWrapper state prepare
+        (compose tcpRead unixSocekWrite)
+        (compose unixSocketRead tcpWrite)
+        closeClientResource))
+    listenerState

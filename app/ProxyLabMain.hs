@@ -39,7 +39,7 @@ forkWrapper state stateTrans step1 step2  close = do
 
 stateTrans:: TcpState -> IO TcpState
 stateTrans s = do
-  sock <- connectUnixSocket  ""  
+  sock <- connectUnixSocket  "/tmp/.jbc_socket"
 
   return s {unixSocket = sock}
 

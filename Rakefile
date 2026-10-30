@@ -20,6 +20,14 @@ COMPONENTS = {
 }.freeze
 
 PROXIES = {
+  mzls_proxy: {
+    name: "mzls-proxy",
+    package_name: "mzls-proxy-generated",
+    composition: :duplex_iteration,
+    host: "127.0.0.1",
+    port: 9300,
+    socket_path: "/tmp/.jbc_socket"
+  },
   raw_tcp_proxy: {
     name: "raw-tcp-proxy",
     package_name: "raw-tcp-proxy-generated",
@@ -72,18 +80,28 @@ def render(template_path, output_path, values)
 end
 
 def generate_proxy(proxy, generated_directory)
-  input = COMPONENTS.fetch(proxy.fetch(:input).fetch(:component))
-  output = COMPONENTS.fetch(proxy.fetch(:output).fetch(:component))
+  if proxy.fetch(:composition) == :duplex_iteration
+    values = proxy.merge(
+      host_literal: haskell_literal(proxy.fetch(:host)),
+      socket_path_literal: haskell_literal(proxy.fetch(:socket_path)),
+      dependencies: ["base ^>=4.18.3.0", "async >= 2.2 && < 2.3", "stm-markov-proxy"]
+    )
+    main_template = "templates/duplex-proxy/Main.hs.erb"
+  else
+    input = COMPONENTS.fetch(proxy.fetch(:input).fetch(:component))
+    output = COMPONENTS.fetch(proxy.fetch(:output).fetch(:component))
 
-  values = proxy.merge(
-    imports: [input, output],
-    input_call: component_call(input, proxy.fetch(:input).fetch(:args)),
-    output_call: component_call(output, proxy.fetch(:output).fetch(:args)),
-    dependencies: ["base ^>=4.18.3.0", input.fetch(:package), output.fetch(:package)].uniq
-  )
+    values = proxy.merge(
+      imports: [input, output],
+      input_call: component_call(input, proxy.fetch(:input).fetch(:args)),
+      output_call: component_call(output, proxy.fetch(:output).fetch(:args)),
+      dependencies: ["base ^>=4.18.3.0", input.fetch(:package), output.fetch(:package)].uniq
+    )
+    main_template = "templates/raw-tcp-proxy/Main.hs.erb"
+  end
 
   render(
-    "templates/raw-tcp-proxy/Main.hs.erb",
+    main_template,
     "#{generated_directory}/app/Main.hs",
     values
   )
