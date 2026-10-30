@@ -6,7 +6,8 @@ module Proxy.Transport.TcpInput
    openResource,
    tcpRead,
    TcpState(..),
-   closeResource,
+   closeClientResource,
+   closeListeningResource,
    openResourceOnly,
    acceptForeachAndIter
   ) where
@@ -69,11 +70,16 @@ tcpRead state = do
     then return ( Right state {payload=chunk})
     else return (Left "all read")
 
-closeResource::TcpState -> IO ()
-closeResource state =do
+closeClientResource::TcpState -> IO ()
+closeClientResource state =do
   S.close (socket state)
+
+
+closeListeningResource::TcpState -> IO ()
+closeListeningResource state =do
   S.close (listeningSocket state)
-  
+
+
 
 
 acceptTcpConnection :: Socket -> IO Socket

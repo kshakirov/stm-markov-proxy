@@ -1,7 +1,7 @@
 module Main where
 
 
-import Proxy.Transport.TcpInput(openResource,tcpRead,closeResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState)
+import Proxy.Transport.TcpInput(openResource,tcpRead,closeClientResource, closeListeningResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState)
 import Proxy.Transport.NamedPipeOutput(namedPipeWrite)
 import Control.Monad
 import Control.Exception
@@ -23,9 +23,11 @@ iter step state = do
 
 
 
-forkWrapper :: s -> (s -> IO (Either l s))-> IO (Either  l s)
-forkWrapper state step  = do
-  forkIO (void (iter step state))
+forkWrapper :: s -> (s -> IO (Either l s))-> (s -> IO()) -> IO (Either  l s)
+forkWrapper state step  close = do
+  forkIO $ do
+    void (iter step state)
+    close state
   return (Right state)
   
 
@@ -41,7 +43,7 @@ main = do
   -- bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
   
   state <- openResourceOnly "" 9000
-  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s (compose tcpRead  namedPipeWrite ))) state
-  closeResource state 
+  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s (compose tcpRead  namedPipeWrite ) closeClientResource)) state
+  closeListeningResource state 
 
   putStrLn "Hello, world!"
