@@ -1,7 +1,7 @@
 module Main where
 
 
-import Proxy.Transport.TcpInput(openResource,tcpRead,closeClientResource, closeListeningResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState, openResourceExtra)
+import Proxy.Transport.TcpInput(openResource,tcpRead,closeClientResource, closeListeningResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState(..), openResourceExtra)
 import Proxy.Transport.UnixSocketOutput (connectUnixSocket, unixSocekWrite)
 import Proxy.Transport.NamedPipeOutput(namedPipeWrite)
 import Control.Monad
@@ -17,23 +17,27 @@ compose f g state = do
 
 iter :: (s -> IO (Either l s)) -> s -> IO l
 iter step state = do
-  result <- step state
+  result <- step   state
   case result of
     Right r -> iter step r 
     Left l -> pure  l
 
 
 
-forkWrapper :: s -> (s -> IO (Either l s))-> (s -> IO()) -> IO (Either  l s)
-forkWrapper state step  close = do
+forkWrapper ::s ->  (s -> IO s ) -> (s -> IO (Either l s))-> (s -> IO()) -> IO (Either  l s)
+forkWrapper state stateTrans step  close = do
+
   forkIO $ do
-    void (iter step state)
-    close state
+    new_state <-  stateTrans state
+    void (iter step new_state)
+    close new_state
   return (Right state)
   
 
-
-
+stateTrans:: TcpState -> IO TcpState
+stateTrans s = do
+  sock <- connectUnixSocket ""
+  return s {unixSocket = sock}
 
 
   
@@ -42,9 +46,9 @@ forkWrapper state step  close = do
 main :: IO ()
 main = do
   -- bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
-  
-  state <- openResourceExtra "" 9000 connectUnixSocket  ""
-  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s (compose tcpRead  unixSocekWrite) closeClientResource)) state
+        
+  state <- openResource "" 9000 
+  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s stateTrans (compose tcpRead  unixSocekWrite) closeClientResource)) state
   closeListeningResource state 
 
   putStrLn "Hello, world!"
