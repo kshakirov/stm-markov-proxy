@@ -73,7 +73,8 @@ library
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.18.3.0,
+    build-depends:    async >= 2.2.5,
+                      base ^>=4.18.3.0,
                       bytestring >= 0.11.5.4,
                       mtl >= 2.3.1,
                       network >= 3.2.7.0,
@@ -102,13 +103,14 @@ executable stm-markov-proxy
 
     -- Other library packages from which modules are imported.
     build-depends:
+                  async >= 2.2.5,
                   base ^>=4.18.3.0,
                   bytestring >= 0.11.5.4,
-                  stm-markov-proxy,
                   mtl >= 2.3.1,
                   network >= 3.2.7.0,
                   network >= 3.2.7.0,
                   stm >= 2.5.1.0,
+                  stm-markov-proxy,
                   transformers >= 0.6.1.0
 
     -- Directories containing source files.
@@ -125,10 +127,11 @@ executable chaindb-proxy
     default-language: Haskell2010
 
     build-depends:
-        base ^>=4.18.3.0,
-        bytestring >= 0.11.5.4,
-        network >= 3.2.7.0,
-        stm-markov-proxy
+                  async >= 2.2.5,
+                  base ^>=4.18.3.0,
+                  bytestring >= 0.11.5.4,
+                  network >= 3.2.7.0,
+                  stm-markov-proxy
 
 executable proxy-lab
     import:           warnings
@@ -137,8 +140,10 @@ executable proxy-lab
     default-language: Haskell2010
 
     build-depends:
-        base ^>=4.18.3.0,
-        stm-markov-proxy
+                  async >= 2.2 && < 2.3,
+                  async >= 2.2.5,
+                  base ^>=4.18.3.0,
+                  stm-markov-proxy
 
 test-suite stm-markov-proxy-test
     -- Import common warning flags.
@@ -167,12 +172,13 @@ test-suite stm-markov-proxy-test
 
     -- Test dependencies.
     build-depends:
+                  async >= 2.2.5,
                   base ^>=4.18.3.0,
                   bytestring >= 0.11.5.4,
                   hspec >= 2.11,
-                  stm-markov-proxy,
                   mtl >= 2.3.1,
                   network >= 3.2.7.0,
                   network >= 3.2.7.0,
                   stm >= 2.5.1.0,
+                  stm-markov-proxy,
                   transformers >= 0.6.1.0

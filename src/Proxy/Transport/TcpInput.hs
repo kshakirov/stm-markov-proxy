@@ -5,6 +5,7 @@ module Proxy.Transport.TcpInput
   ,tcpInput,
    openResource,
    tcpRead,
+   tcpWrite,
    TcpState(..),
    closeClientResource,
    closeListeningResource,
