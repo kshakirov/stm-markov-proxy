@@ -30,15 +30,17 @@ forkWrapper state stateTrans step1 step2  close = do
 
   forkIO $ do
     new_state <-  stateTrans state
-    void (iter step1 new_state)
-    void (iter step2 new_state)
+    withAsync (void (iter step1 new_state)) $ \task -> do
+      link task
+      void (iter step2 new_state)
     close new_state
   return (Right state)
   
 
 stateTrans:: TcpState -> IO TcpState
 stateTrans s = do
-  sock <- connectUnixSocket ""
+  sock <- connectUnixSocket  ""  
+
   return s {unixSocket = sock}
 
 

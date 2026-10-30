@@ -90,6 +90,7 @@ tcpRead state = do
 closeClientResource::TcpState -> IO ()
 closeClientResource state =do
   S.close (socket state)
+  S.close (unixSocket state)
 
 
 closeListeningResource::TcpState -> IO ()
