@@ -1,0 +1,10 @@
+{
+  "name": "mzls-proxy",
+  "package_name": "mzls-proxy-generated",
+  "composition": "duplex_iteration",
+  "input": {"component": "TcpInput"},
+  "output": {"component": "UnixSocketOutput"},
+  "host": "127.0.0.1",
+  "port": 9300,
+  "socket_path": "/tmp/.jbc_socket"
+}

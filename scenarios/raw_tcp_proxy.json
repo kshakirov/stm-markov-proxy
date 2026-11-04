@@ -1,0 +1,7 @@
+{
+  "name": "raw-tcp-proxy",
+  "package_name": "raw-tcp-proxy-generated",
+  "composition": "kleisli",
+  "input": {"component": "TcpInput", "args": ["127.0.0.1", 9300]},
+  "output": {"component": "UnixSocketOutput", "args": ["/tmp/chaindb-proxy-test.sock"]}
+}

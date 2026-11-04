@@ -3,6 +3,7 @@ module Main where
 import Control.Concurrent (forkIO)
 import Control.Concurrent.Async (link, withAsync)
 import Control.Monad (void)
+import Control.Exception (bracket)
 import Proxy.Transport.TcpInput
   ( TcpState(..), openResourceOnly, acceptForeachAndIter
   , tcpRead, tcpWrite, closeClientResource
@@ -24,13 +25,14 @@ iter step state = do
     Right next -> iter step next
 
 forkWrapper state prepare step1 step2 close = do
-  _ <- forkIO $ do
-    ready <- prepare state
-    withAsync (void (iter step1 ready)) $ \task -> do
-      link task
-      void (iter step2 ready)
-    close ready
+  _ <- forkIO $
+    bracket (prepare state) close (useResource step1 step2)
   pure (Right state)
+
+useResource step1 step2 state =
+  withAsync (void (iter step1 state)) $ \task -> do
+    link task
+    void (iter step2 state)
 
 prepare :: TcpState -> IO TcpState
 prepare state = do

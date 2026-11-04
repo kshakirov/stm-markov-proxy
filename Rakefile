@@ -1,5 +1,7 @@
 require "erb"
 require "fileutils"
+require "json"
+require "open3"
 
 COMPONENTS = {
   "TcpInput" => {
@@ -19,42 +21,13 @@ COMPONENTS = {
   }
 }.freeze
 
-PROXIES = {
-  mzls_proxy: {
-    name: "mzls-proxy",
-    package_name: "mzls-proxy-generated",
-    composition: :duplex_iteration,
-    host: "127.0.0.1",
-    port: 9300,
-    socket_path: "/tmp/.jbc_socket"
-  },
-  raw_tcp_proxy: {
-    name: "raw-tcp-proxy",
-    package_name: "raw-tcp-proxy-generated",
-    composition: :kleisli,
-    input: {
-      component: "TcpInput",
-      args: ["127.0.0.1", 9300]
-    },
-    output: {
-      component: "UnixSocketOutput",
-      args: ["/tmp/chaindb-proxy-test.sock"]
-    }
-  },
-  raw_tcp_pipe_proxy: {
-    name: "raw-tcp-pipe-proxy",
-    package_name: "raw-tcp-pipe-proxy-generated",
-    composition: :kleisli,
-    input: {
-      component: "TcpInput",
-      args: ["127.0.0.1", 9300]
-    },
-    output: {
-      component: "NamedPipeOutput",
-      args: ["/tmp/chaindb-proxy-test.pipe"]
-    }
-  }
-}.freeze
+PROXIES = Dir["scenarios/*.json"].sort.to_h do |path|
+  proxy = JSON.parse(File.read(path), symbolize_names: true)
+  unless proxy.fetch(:name).match?(/\A[a-z][a-z0-9-]*\z/)
+    raise ArgumentError, "Invalid executable name in #{path}"
+  end
+  [File.basename(path, ".json").to_sym, proxy]
+end.freeze
 
 def haskell_literal(value)
   case value
@@ -80,7 +53,11 @@ def render(template_path, output_path, values)
 end
 
 def generate_proxy(proxy, generated_directory)
-  if proxy.fetch(:composition) == :duplex_iteration
+  if proxy.fetch(:composition) == "duplex_iteration"
+    unless proxy.fetch(:input).fetch(:component) == "TcpInput" &&
+           proxy.fetch(:output).fetch(:component) == "UnixSocketOutput"
+      raise ArgumentError, "duplex_iteration requires TcpInput and UnixSocketOutput"
+    end
     values = proxy.merge(
       host_literal: haskell_literal(proxy.fetch(:host)),
       socket_path_literal: haskell_literal(proxy.fetch(:socket_path)),
@@ -88,6 +65,7 @@ def generate_proxy(proxy, generated_directory)
     )
     main_template = "templates/duplex-proxy/Main.hs.erb"
   else
+    raise ArgumentError, "Unsupported composition" unless proxy.fetch(:composition) == "kleisli"
     input = COMPONENTS.fetch(proxy.fetch(:input).fetch(:component))
     output = COMPONENTS.fetch(proxy.fetch(:output).fetch(:component))
 
@@ -136,9 +114,28 @@ PROXIES.each do |task_name, proxy|
         "--project-file=#{generated_directory}/cabal.project",
         "#{proxy.fetch(:package_name)}:exe:#{proxy.fetch(:name)}"
       )
+      binary, status = Open3.capture2(
+        "cabal", "list-bin",
+        "--project-file=#{generated_directory}/cabal.project",
+        "#{proxy.fetch(:package_name)}:exe:#{proxy.fetch(:name)}"
+      )
+      raise "Cannot locate compiled binary" unless status.success?
+
+      FileUtils.mkdir_p("bin")
+      destination = "bin/#{proxy.fetch(:name)}"
+      FileUtils.cp(binary.strip, destination, preserve: true)
+      puts "Binary: #{destination}"
     end
   end
 
   desc "Generate and build #{proxy.fetch(:name)}"
   task task_name => "#{task_name}:build"
+end
+
+desc "Build a scenario: rake 'build[mzls_proxy]'"
+task :build, [:scenario] do |_, args|
+  scenario = args[:scenario].to_s.to_sym
+  raise ArgumentError, "Unknown scenario: #{args[:scenario]}" unless PROXIES.key?(scenario)
+
+  Rake::Task["#{scenario}:build"].invoke
 end

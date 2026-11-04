@@ -1,0 +1,7 @@
+{
+  "name": "raw-tcp-pipe-proxy",
+  "package_name": "raw-tcp-pipe-proxy-generated",
+  "composition": "kleisli",
+  "input": {"component": "TcpInput", "args": ["127.0.0.1", 9300]},
+  "output": {"component": "NamedPipeOutput", "args": ["/tmp/chaindb-proxy-test.pipe"]}
+}

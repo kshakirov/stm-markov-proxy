@@ -7,6 +7,7 @@ dist-newstyle/
 
 # Rake/ERB generated proxy packages
 /generated/
+/bin/
 
 # Editor backup files
 *~
