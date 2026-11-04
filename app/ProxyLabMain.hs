@@ -24,18 +24,21 @@ iter step state = do
     Left l -> pure  l
 
 
+useResource ::  (s -> IO (Either l s)) ->(s -> IO (Either l s))  ->s -> IO ()
+useResource step1 step2 state  = do
+    withAsync (void (iter step1 state)) $ \task -> do
+      link task
+      void (iter step2 state)
+  
 
 forkWrapper ::s ->  (s -> IO s ) -> (s -> IO (Either l s)) ->(s -> IO (Either l s))-> (s -> IO()) -> IO (Either  l s)
 forkWrapper state stateTrans step1 step2  close = do
 
   forkIO $ do
-    new_state <-  stateTrans state
-    withAsync (void (iter step1 new_state)) $ \task -> do
-      link task
-      void (iter step2 new_state)
-    close new_state
+   bracket (stateTrans state ) close (useResource step1 step2)
   return (Right state)
-  
+
+
 
 stateTrans:: TcpState -> IO TcpState
 stateTrans s = do
@@ -52,7 +55,7 @@ main = do
   -- bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
         
   state <- openResourceOnly "" 9000 
-  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s stateTrans (compose tcpRead  unixSocekWrite) (compose unixSocketRead tcpWrite)closeClientResource)) state
+  iter  ( compose acceptForeachAndIter (\s -> forkWrapper s stateTrans (compose tcpRead  unixSocekWrite) (compose unixSocketRead tcpWrite) closeClientResource)) state 
   closeListeningResource state 
 
   putStrLn "Hello, world!"
