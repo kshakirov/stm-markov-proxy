@@ -4,7 +4,8 @@ module Proxy.Transport.UnixSocketOutput
   , sendUnixChunk
   ,unixSocketOutput,
 unixSocketRead,
-   unixSocekWrite
+   unixSocekWrite,
+   closeUnixSocket
   ) where
 
 import Control.Exception (onException)
@@ -47,3 +48,7 @@ unixSocketRead state = do
   if (B.length chunk)  > 0 
     then return ( Right state {payload=chunk})
     else return (Left "all read")
+
+closeUnixSocket :: TcpState -> IO ()
+closeUnixSocket s =
+  S.close (unixSocket s)

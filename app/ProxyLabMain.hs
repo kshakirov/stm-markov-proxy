@@ -2,12 +2,13 @@ module Main where
 
 
 import Proxy.Transport.TcpInput(openResource,tcpRead,closeClientResource, closeListeningResource, acceptTcpConnection, openResourceOnly, acceptForeachAndIter,TcpState(..), openResourceExtra,tcpWrite)
-import Proxy.Transport.UnixSocketOutput (connectUnixSocket, unixSocekWrite, unixSocketRead)
+import Proxy.Transport.UnixSocketOutput (connectUnixSocket, unixSocekWrite, unixSocketRead, closeUnixSocket)
 import Proxy.Transport.NamedPipeOutput(namedPipeWrite)
 import Control.Monad
 import Control.Exception
 import Control.Concurrent
 import Control.Concurrent.Async
+import Network.Socket (Socket)
 
 compose f g state = do
   result <- f state
@@ -46,8 +47,17 @@ stateTrans s = do
 
   return s {unixSocket = sock}
 
+tcpSockFromState :: TcpState -> IO Socket 
+tcpSockFromState s =  return (socket s )
 
-  
+forkWrapper2 ::s ->  (s -> IO Socket)-> (s -> IO s ) -> (s -> IO (Either l s)) ->(s -> IO (Either l s))-> (Socket -> IO()) -> (s -> IO()) -> IO (Either  l s)
+forkWrapper2 state tcpSockFromState stateTrans  step1 step2  close1 close2 = do
+
+  forkIO $ do
+    bracket (tcpSockFromState state) close1 (\tcp -> bracket (stateTrans state  ) close2 (useResource step1 step2))
+  return (Right state)
+
+ 
   
 
 main :: IO ()
