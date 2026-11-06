@@ -11,11 +11,13 @@ module Proxy.Transport.TcpInput
    closeListeningResource,
    openResourceOnly,
    openResourceExtra,
-   acceptForeachAndIter
+   acceptForeachAndIter,
+   closeAccetpResource
   ) where
 
 import Control.Exception (onException)
 import Network.Socket (Socket)
+
 import qualified Network.Socket as S
 import Network.Socket.ByteString (recv,sendAll)
 import qualified Data.ByteString as B
@@ -96,6 +98,10 @@ closeClientResource state =do
 closeListeningResource::TcpState -> IO ()
 closeListeningResource state =do
   S.close (listeningSocket state)
+
+closeAccetpResource::Socket -> IO ()
+closeAccetpResource s =do
+  S.close s
 
 
 
