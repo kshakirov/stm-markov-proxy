@@ -9,7 +9,7 @@ import Control.Exception
 import Control.Concurrent
 import Control.Concurrent.Async
 import Network.Socket (Socket)
-import GHC.Conc (atomically, readTVar, readTVarIO)
+import GHC.Conc (atomically, readTVar, readTVarIO, writeTVar)
 import qualified Network.Socket as S
 
 compose f g state = do
@@ -58,6 +58,7 @@ forkWrapper2 state tcpSockFromState stateTrans  step1 step2  close1 close2 = do
   case counter > (connectionLimit state) of 
     True -> S.close (socket state)
     False ->  void (forkIO $ do
+      atomically $ writeTVar (connectionCounter state) (counter + 1) 
       bracket (tcpSockFromState state) close1 (\tcp -> bracket (stateTrans state  ) close2 (useResource step1 step2)))
   return (Right state)
 
