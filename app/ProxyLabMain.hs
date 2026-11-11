@@ -9,6 +9,8 @@ import Control.Exception
 import Control.Concurrent
 import Control.Concurrent.Async
 import Network.Socket (Socket)
+import GHC.Conc (atomically, readTVar, readTVarIO)
+import qualified Network.Socket as S
 
 compose f g state = do
   result <- f state
@@ -50,11 +52,13 @@ stateTrans s = do
 tcpSockFromState :: TcpState -> IO Socket 
 tcpSockFromState s =  return (socket s )
 
-forkWrapper2 ::s ->  (s -> IO Socket)-> (s -> IO s ) -> (s -> IO (Either l s)) ->(s -> IO (Either l s))-> (Socket -> IO()) -> (s -> IO()) -> IO (Either  l s)
+forkWrapper2 ::TcpState ->  (TcpState -> IO Socket)-> (TcpState -> IO TcpState ) -> (TcpState -> IO (Either l TcpState)) ->(TcpState -> IO (Either l TcpState))-> (Socket -> IO()) -> (TcpState -> IO()) -> IO (Either  l TcpState)
 forkWrapper2 state tcpSockFromState stateTrans  step1 step2  close1 close2 = do
-
-  forkIO $ do
-    bracket (tcpSockFromState state) close1 (\tcp -> bracket (stateTrans state  ) close2 (useResource step1 step2))
+  counter <-  atomically  $  readTVar (connectionCounter state)
+  case counter > (connectionLimit state) of 
+    True -> S.close (socket state)
+    False ->  void (forkIO $ do
+      bracket (tcpSockFromState state) close1 (\tcp -> bracket (stateTrans state  ) close2 (useResource step1 step2)))
   return (Right state)
 
  

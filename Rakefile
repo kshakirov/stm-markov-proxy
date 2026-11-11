@@ -61,9 +61,9 @@ def generate_proxy(proxy, generated_directory)
     values = proxy.merge(
       host_literal: haskell_literal(proxy.fetch(:host)),
       socket_path_literal: haskell_literal(proxy.fetch(:socket_path)),
-      dependencies: ["base ^>=4.18.3.0", "async >= 2.2 && < 2.3", "stm-markov-proxy"]
+      dependencies: ["base ^>=4.18.3.0", "async >= 2.2 && < 2.3", "network >= 3.2.7.0", "stm-markov-proxy"]
     )
-    main_template = "templates/duplex-proxy/Main.hs.erb"
+    main_template = "templates/tcp-unix-proxy/Main.hs.erb"
   else
     raise ArgumentError, "Unsupported composition" unless proxy.fetch(:composition) == "kleisli"
     input = COMPONENTS.fetch(proxy.fetch(:input).fetch(:component))

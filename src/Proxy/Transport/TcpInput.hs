@@ -15,6 +15,7 @@ module Proxy.Transport.TcpInput
    closeAccetpResource
   ) where
 
+import Control.Concurrent.STM (TVar, newTVarIO,newTVar, readTVar, writeTVar, STM,atomically)
 import Control.Exception (onException)
 import Network.Socket (Socket)
 
@@ -43,14 +44,17 @@ data TcpState = TcpState{
   socket :: Socket,
   listeningSocket :: Socket,
   unixSocket::Socket,
-  payload :: B.ByteString
+  payload :: B.ByteString,
+  connectionLimit :: Int,
+  connectionCounter :: TVar Int
   }
 
 
 openResourceOnly::String -> Int -> IO TcpState
 openResourceOnly hostName port = do
   sock <- openTcpListener  hostName port
-  return TcpState{socket = undefined, payload="", listeningSocket=sock}
+  cc <- newTVarIO 0 
+  return TcpState{socket = undefined, payload="", listeningSocket=sock, connectionLimit=100, connectionCounter =  cc}
 
 openResourceExtra::String -> Int ->(FilePath -> IO Socket)-> FilePath ->  IO TcpState
 openResourceExtra hostName port openAnotherSocekt  filePath= do
