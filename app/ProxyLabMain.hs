@@ -52,14 +52,20 @@ connectUnixBackend s = do
 tcpSockFromState :: TcpState -> IO Socket 
 tcpSockFromState s =  return (socket s )
 
-forkWrapper2 ::TcpState ->  (TcpState -> IO (Either l TcpState)) ->(TcpState -> IO (Either l TcpState))-> (Socket -> IO()) -> (TcpState -> IO()) -> IO (Either  l TcpState)
+forkWrapper2 ::TcpState ->  (TcpState -> IO (Either l TcpState)) ->(TcpState -> IO (Either l TcpState))-> (TcpState -> IO()) -> (TcpState -> IO()) -> IO (Either  l TcpState)
 forkWrapper2 state  step1 step2  close1 close2 = do
-  counter <-  atomically  $  readTVar (connectionCounter state)
-  case counter > (connectionLimit state) of 
+  limitReached  <-  atomically  $ do
+    counter <- readTVar (connectionCounter state)
+    case counter >= (connectionLimit state) of
+      True -> pure True
+      False -> do
+        writeTVar (connectionCounter state) (counter + 1)
+        pure False
+    
+  case limitReached  of 
     True -> S.close (socket state)
     False ->  void (forkIO $ do
-      atomically $ writeTVar (connectionCounter state) (counter + 1) 
-      bracket (return (socket state)) close1 (\tcp -> bracket (connectUnixBackend state  ) close2 (useResource step1 step2)))
+              bracket (return state) close1 (\tcp -> bracket (connectUnixBackend state  ) close2 (useResource step1 step2)))
   return (Right state)
 
  

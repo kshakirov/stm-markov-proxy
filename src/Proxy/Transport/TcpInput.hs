@@ -54,7 +54,7 @@ openResourceOnly::String -> Int -> IO TcpState
 openResourceOnly hostName port = do
   sock <- openTcpListener  hostName port
   cc <- newTVarIO 0 
-  return TcpState{socket = undefined, payload="", listeningSocket=sock, connectionLimit=100, connectionCounter =  cc}
+  return TcpState{socket = undefined, payload="", listeningSocket=sock, connectionLimit=2, connectionCounter =  cc}
 
 openResourceExtra::String -> Int ->(FilePath -> IO Socket)-> FilePath ->  IO TcpState
 openResourceExtra hostName port openAnotherSocekt  filePath= do
@@ -103,9 +103,12 @@ closeListeningResource::TcpState -> IO ()
 closeListeningResource state =do
   S.close (listeningSocket state)
 
-closeAccetpResource::Socket -> IO ()
+closeAccetpResource::TcpState -> IO ()
 closeAccetpResource s =do
-  S.close s
+  atomically $  do
+    counter <- readTVar (connectionCounter s)
+    writeTVar (connectionCounter s) (counter - 1)
+  S.close (socket s)
 
 
 
