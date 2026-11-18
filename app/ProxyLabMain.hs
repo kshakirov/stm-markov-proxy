@@ -43,8 +43,8 @@ forkWrapper state stateTrans step1 step2  close = do
 
 
 
-stateTrans:: TcpState -> IO TcpState
-stateTrans s = do
+connectUnixBackend:: TcpState -> IO TcpState
+connectUnixBackend s = do
   sock <- connectUnixSocket  "/tmp/.jbc_socket"
 
   return s {unixSocket = sock}
@@ -52,14 +52,14 @@ stateTrans s = do
 tcpSockFromState :: TcpState -> IO Socket 
 tcpSockFromState s =  return (socket s )
 
-forkWrapper2 ::TcpState ->  (TcpState -> IO Socket)-> (TcpState -> IO TcpState ) -> (TcpState -> IO (Either l TcpState)) ->(TcpState -> IO (Either l TcpState))-> (Socket -> IO()) -> (TcpState -> IO()) -> IO (Either  l TcpState)
-forkWrapper2 state tcpSockFromState stateTrans  step1 step2  close1 close2 = do
+forkWrapper2 ::TcpState ->  (TcpState -> IO (Either l TcpState)) ->(TcpState -> IO (Either l TcpState))-> (Socket -> IO()) -> (TcpState -> IO()) -> IO (Either  l TcpState)
+forkWrapper2 state  step1 step2  close1 close2 = do
   counter <-  atomically  $  readTVar (connectionCounter state)
   case counter > (connectionLimit state) of 
     True -> S.close (socket state)
     False ->  void (forkIO $ do
       atomically $ writeTVar (connectionCounter state) (counter + 1) 
-      bracket (tcpSockFromState state) close1 (\tcp -> bracket (stateTrans state  ) close2 (useResource step1 step2)))
+      bracket (return (socket state)) close1 (\tcp -> bracket (connectUnixBackend state  ) close2 (useResource step1 step2)))
   return (Right state)
 
  
@@ -70,7 +70,7 @@ main = do
   -- bracket   (openResource "" 9000) closeResource (iter (compose tcpRead  namedPipeWrite ))
         
   state <- openResourceOnly "" 9000 
-  iter  ( compose acceptForeachAndIter (\s -> forkWrapper2 s tcpSockFromState stateTrans (compose tcpRead  unixSocekWrite) (compose unixSocketRead tcpWrite) closeAccetpResource closeUnixSocket)) state 
+  iter  ( compose acceptForeachAndIter (\s -> forkWrapper2 s (compose tcpRead  unixSocekWrite) (compose unixSocketRead tcpWrite) closeAccetpResource closeUnixSocket)) state 
   closeListeningResource state 
 
   putStrLn "Hello, world!"
